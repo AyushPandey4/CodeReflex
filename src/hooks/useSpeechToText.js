@@ -8,7 +8,7 @@ export function useSpeechToText() {
   const [error, setError] = useState(null)
   const recognitionRef = useRef(null)
   const isListeningRef = useRef(false)
-  const lastTranscriptRef = useRef('');
+  const finalTranscriptRef = useRef('');
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -35,12 +35,14 @@ export function useSpeechToText() {
       };
 
       recognition.onend = () => {
+        const wasListening = isListeningRef.current;
         isListeningRef.current = false;
         setIsListening(false);
-        // Only restart if it was stopped unexpectedly
-        if (isListeningRef.current) {
+        // Only restart if it was stopped unexpectedly (and not via a manual call to stopListening)
+        if (wasListening) {
+          finalTranscriptRef.current = transcript; // Persist the transcript before restarting
           try {
-            recognition.start();
+            recognitionRef.current.start();
           } catch (err) {
             console.error('Error restarting recognition:', err);
             setError('Failed to restart speech recognition');
@@ -50,16 +52,19 @@ export function useSpeechToText() {
 
       recognition.onresult = (event) => {
         try {
-          let finalTranscript = '';
           let interimTranscript = '';
-          for (let i = event.resultIndex; i < event.results.length; ++i) {
+          let sessionFinalTranscript = '';
+
+          for (let i = 0; i < event.results.length; ++i) {
+            const transcriptPart = event.results[i][0].transcript;
             if (event.results[i].isFinal) {
-              finalTranscript += event.results[i][0].transcript;
+              sessionFinalTranscript += transcriptPart;
             } else {
-              interimTranscript += event.results[i][0].transcript;
+              interimTranscript += transcriptPart;
             }
           }
-          setTranscript(prev => prev + finalTranscript + interimTranscript);
+          
+          setTranscript(finalTranscriptRef.current + sessionFinalTranscript + interimTranscript);
           setError(null);
         } catch (err) {
           console.error('Error processing speech result:', err);
@@ -96,12 +101,12 @@ export function useSpeechToText() {
     }
   }, []);
 
-  // When transcript is cleared, also reset lastTranscriptRef
-useEffect(() => {
-  if (transcript === '') {
-    lastTranscriptRef.current = '';
-  }
-}, [transcript]);
+  // When transcript is cleared from the parent, also reset our final transcript ref
+  useEffect(() => {
+    if (transcript === '') {
+      finalTranscriptRef.current = '';
+    }
+  }, [transcript]);
 
   const startListening = () => {
     if (!recognitionRef.current) {
@@ -111,6 +116,8 @@ useEffect(() => {
 
     try {
       if (!isListening) {
+        // Before starting, ensure the final transcript is up-to-date with any existing text
+        finalTranscriptRef.current = transcript;
         recognitionRef.current.start();
         isListeningRef.current = true;
         setIsListening(true);
@@ -132,10 +139,9 @@ useEffect(() => {
 
     try {
       if (isListening) {
+        isListeningRef.current = false; // Signal that this is a manual stop
         recognitionRef.current.stop();
-        isListeningRef.current = false;
-        setIsListening(false);
-        setError(null);
+        // State update will be handled by onend
       }
     } catch (err) {
       console.error('Error stopping speech recognition:', err);
