@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Code, ChevronDown, ChevronUp, Play } from 'lucide-react'
 import Editor from '@monaco-editor/react'
@@ -8,6 +8,10 @@ import Editor from '@monaco-editor/react'
 export function CodeEditor({ initialCode, onCodeChange, onSubmitCode, readOnly = false }) {
   const [isExpanded, setIsExpanded] = useState(true)
   const [code, setCode] = useState(initialCode)
+
+  useEffect(() => {
+    setCode(initialCode)
+  }, [initialCode])
 
   const handleEditorChange = useCallback((value) => {
     setCode(value)

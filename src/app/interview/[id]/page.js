@@ -1,20 +1,25 @@
-'use client'
+"use client";
 
-import { useState, useEffect, useCallback, useRef } from 'react'
-import { supabase } from '@/lib/supabase'
-import { notFound, useParams, useRouter } from 'next/navigation'
-import { Mic, Video, VideoOff, BrainCircuit, Bot, User } from 'lucide-react'
-import { Timer } from '@/components/Timer'
-import { useSpeechToText } from '@/hooks/useSpeechToText'
-import { useTextToSpeech } from '@/hooks/useTextToSpeech'
-import { UserTranscriptArea } from '@/components/UserTranscriptArea'
-import { InterviewerChatArea } from '@/components/InterviewerChatArea'
-import { CodeEditor } from '@/components/CodeEditor'
-import FacialFeedback from '@/components/FacialFeedback'
-import { motion, AnimatePresence } from 'framer-motion'
+import { useState, useEffect, useCallback, useRef } from "react";
+import { supabase } from "@/lib/supabase";
+import { notFound, useParams, useRouter } from "next/navigation";
+import { Mic, Video, VideoOff, BrainCircuit, Bot, User } from "lucide-react";
+import { Timer } from "@/components/Timer";
+import { useSpeechToText } from "@/hooks/useSpeechToText";
+import { useTextToSpeech } from "@/hooks/useTextToSpeech";
+import { UserTranscriptArea } from "@/components/UserTranscriptArea";
+import { InterviewerChatArea } from "@/components/InterviewerChatArea";
+import { CodeEditor } from "@/components/CodeEditor";
+import FacialFeedback from "@/components/FacialFeedback";
+import { motion, AnimatePresence } from "framer-motion";
 
 // Placeholder components - we will build these out next
-const PermissionsPrompt = ({ onPermissionsGranted, isCameraEnabled, requestCamera, setRequestCamera }) => (
+const PermissionsPrompt = ({
+  onPermissionsGranted,
+  isCameraEnabled,
+  requestCamera,
+  setRequestCamera,
+}) => (
   <motion.div
     initial={{ opacity: 0 }}
     animate={{ opacity: 1 }}
@@ -39,9 +44,10 @@ const PermissionsPrompt = ({ onPermissionsGranted, isCameraEnabled, requestCamer
 
       {/* Description */}
       <p className="text-gray-300 mb-8 leading-relaxed">
-        We need microphone access to hear your responses. Camera access is optional but recommended for emotion feedback.
+        We need microphone access to hear your responses. Camera access is
+        optional but recommended for emotion feedback.
       </p>
-      
+
       {/* Camera Toggle */}
       {isCameraEnabled && (
         <motion.div
@@ -52,21 +58,25 @@ const PermissionsPrompt = ({ onPermissionsGranted, isCameraEnabled, requestCamer
         >
           <div className="flex-1 text-left">
             <p className="text-gray-300 font-medium">Enable Camera</p>
-            <p className="text-sm text-gray-400">For real-time emotion feedback</p>
+            <p className="text-sm text-gray-400">
+              For real-time emotion feedback
+            </p>
           </div>
-          <motion.button 
+          <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => setRequestCamera(!requestCamera)}
             className={`relative p-2 rounded-full transition-colors ${
-              requestCamera 
-                ? 'bg-indigo-500 hover:bg-indigo-600' 
-                : 'bg-gray-600 hover:bg-gray-500'
+              requestCamera
+                ? "bg-indigo-500 hover:bg-indigo-600"
+                : "bg-gray-600 hover:bg-gray-500"
             }`}
           >
-            <Video className={`h-5 w-5 transition-colors ${
-              requestCamera ? 'text-white' : 'text-gray-400'
-            }`} />
+            <Video
+              className={`h-5 w-5 transition-colors ${
+                requestCamera ? "text-white" : "text-gray-400"
+              }`}
+            />
             {requestCamera && (
               <motion.div
                 layoutId="cameraToggle"
@@ -84,7 +94,7 @@ const PermissionsPrompt = ({ onPermissionsGranted, isCameraEnabled, requestCamer
       <motion.button
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
-        onClick={onPermissionsGranted} 
+        onClick={onPermissionsGranted}
         className="w-full bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white px-6 py-4 rounded-xl transition-all flex items-center justify-center space-x-2 shadow-lg shadow-indigo-500/20"
       >
         <Mic className="h-5 w-5" />
@@ -93,7 +103,8 @@ const PermissionsPrompt = ({ onPermissionsGranted, isCameraEnabled, requestCamer
 
       {/* Privacy Note */}
       <p className="mt-4 text-sm text-gray-400">
-        Your privacy is important. We only use your camera and microphone during the interview.
+        Your privacy is important. We only use your camera and microphone during
+        the interview.
       </p>
     </motion.div>
   </motion.div>
@@ -102,10 +113,10 @@ const PermissionsPrompt = ({ onPermissionsGranted, isCameraEnabled, requestCamer
 const SubmissionOverlay = ({ feedback }) => (
   <div className="fixed inset-0 bg-gray-900 bg-opacity-90 flex flex-col items-center justify-center z-50 p-4">
     <BrainCircuit className="h-16 w-16 text-blue-500 mb-6 animate-pulse" />
-    <h2 className="text-3xl font-bold text-white mb-4">Generating Your Feedback...</h2>
-    <p className="text-gray-300 text-lg text-center max-w-2xl">
-      {feedback}
-    </p>
+    <h2 className="text-3xl font-bold text-white mb-4">
+      Generating Your Feedback...
+    </h2>
+    <p className="text-gray-300 text-lg text-center max-w-2xl">{feedback}</p>
   </div>
 );
 
@@ -139,7 +150,8 @@ const ConfirmationModal = ({ isOpen, onClose, onConfirm }) => (
 
           {/* Description */}
           <p className="text-gray-300 mb-8 leading-relaxed">
-            Are you sure you want to end this interview? Your responses will be analyzed and you'll receive detailed feedback.
+            Are you sure you want to end this interview? Your responses will be
+            analyzed and you'll receive detailed feedback.
           </p>
 
           {/* Buttons */}
@@ -168,32 +180,46 @@ const ConfirmationModal = ({ isOpen, onClose, onConfirm }) => (
 );
 
 export default function InterviewPage() {
-  const { id } = useParams()
-  const router = useRouter()
-  const [interview, setInterview] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-  const [permissionsGranted, setPermissionsGranted] = useState(false)
-  const [requestCamera, setRequestCamera] = useState(true)
-  
-  const [conversationLog, setConversationLog] = useState([])
-  const [codeLog, setCodeLog] = useState([])
-  const [isAiTyping, setIsAiTyping] = useState(false)
-  const [code, setCode] = useState('// Your code here...');
+  const { id } = useParams();
+  const router = useRouter();
+  const [interview, setInterview] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [permissionsGranted, setPermissionsGranted] = useState(false);
+  const [requestCamera, setRequestCamera] = useState(true);
+
+  const [conversationLog, setConversationLog] = useState([]);
+  const [codeLog, setCodeLog] = useState([]);
+  const [isAiTyping, setIsAiTyping] = useState(false);
+  const [code, setCode] = useState("// Your code here...");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submissionFeedback, setSubmissionFeedback] = useState('Gathering your responses...');
-  const [liveFeedback, setLiveFeedback] = useState('');
+  const [submissionFeedback, setSubmissionFeedback] = useState(
+    "Gathering your responses..."
+  );
+  const [liveFeedback, setLiveFeedback] = useState("");
   const lastSpokenTextRef = useRef(null);
   const [emotionLog, setEmotionLog] = useState([]);
   const [videoStream, setVideoStream] = useState(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
 
-  const { isListening, transcript: userSpeech, startListening, stopListening, setTranscript: setUserSpeech, error: speechError } = useSpeechToText()
-  const { speak, cancel: cancelSpeech, isSpeaking, error: speechSynthesisError } = useTextToSpeech();
-  const [voiceURI, setVoiceURI] = useState('');
+  const {
+    isListening,
+    transcript: userSpeech,
+    startListening,
+    stopListening,
+    setTranscript: setUserSpeech,
+    error: speechError,
+  } = useSpeechToText();
+  const {
+    speak,
+    cancel: cancelSpeech,
+    isSpeaking,
+    error: speechSynthesisError,
+  } = useTextToSpeech();
+  const [voiceURI, setVoiceURI] = useState("");
 
   useEffect(() => {
-    const savedVoice = localStorage.getItem('interviewer_voice_uri');
+    const savedVoice = localStorage.getItem("interviewer_voice_uri");
     if (savedVoice) {
       setVoiceURI(savedVoice);
     }
@@ -202,51 +228,60 @@ export default function InterviewPage() {
   useEffect(() => {
     const fetchInterview = async () => {
       if (!id) return;
-      
+
       try {
         const { data, error } = await supabase
-          .from('interviews')
-          .select('*')
-          .eq('id', id)
-          .single()
+          .from("interviews")
+          .select("*")
+          .eq("id", id)
+          .single();
 
-        if (error) throw error
-        if (!data) throw new Error('Interview not found')
-        
-        setInterview(data)
+        if (error) throw error;
+        if (!data) throw new Error("Interview not found");
+
+        setInterview(data);
       } catch (err) {
-        console.error('Error fetching interview:', err)
-        setError(err.message)
+        console.error("Error fetching interview:", err);
+        setError(err.message);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
-    fetchInterview()
-  }, [id])
+    fetchInterview();
+  }, [id]);
 
   // This is now a regular function, not a useCallback, to ensure it never has stale state.
   const getAiResponse = async (currentConversation) => {
     // Stronger guard clause to ensure all necessary data is loaded.
-    if (!interview || !interview.job_role || !interview.interviewer_personality) {
-      console.error("getAiResponse called before interview data was fully loaded.");
+    if (
+      !interview ||
+      !interview.job_role ||
+      !interview.interviewer_personality
+    ) {
+      console.error(
+        "getAiResponse called before interview data was fully loaded."
+      );
       return;
     }
-    
+
     setIsAiTyping(true);
 
     const conversationHistory = currentConversation
-      .map(msg => {
-        let history = `${msg.sender === 'ai' ? 'Interviewer' : 'Candidate'}: ${msg.text}`;
+      .map((msg) => {
+        let history = `${msg.sender === "ai" ? "Interviewer" : "Candidate"}: ${
+          msg.text
+        }`;
         if (msg.code) {
           history += `\n\`\`\`javascript\n${msg.code}\n\`\`\``;
         }
         return history;
       })
-      .join('\n\n');
-      
+      .join("\n\n");
+
     const lastMessage = currentConversation[currentConversation.length - 1];
-    const isCodeSubmission = lastMessage?.sender === 'user' && lastMessage?.code;
+    const isCodeSubmission =
+      lastMessage?.sender === "user" && lastMessage?.code;
 
     const systemPrompt = `You are a highly professional and realistic AI Interviewer for CodeReflex.
 
@@ -257,7 +292,7 @@ export default function InterviewPage() {
 - Difficulty: ${interview.difficulty_level}
 - Type: ${interview.interview_type.toUpperCase()}
 - Duration: ${interview.duration} minutes
-- Focus Areas: ${interview.custom_focus_areas || 'None specified'}
+- Focus Areas: ${interview.custom_focus_areas || "None specified"}
 - Preferred Language: Ask the user if not already known.
 - Resume: ${interview.resume_text}
 - Job Description: ${interview.job_description}
@@ -290,8 +325,9 @@ Adapt your tone and pacing accordingly. Maintain professionalism and realism.
 
 🎯 **Dynamic Interview Flow Logic:**
 
-${isCodeSubmission
-? `
+${
+  isCodeSubmission
+    ? `
 🧪 Code has been submitted.
 
 Your task:
@@ -304,7 +340,7 @@ Your task:
 - Do NOT fix the code.
 - Set "code": null
 `
-: `
+    : `
 🧭 Continue the interview.
 
 If you haven't yet, start by asking:
@@ -314,7 +350,7 @@ Then based on interview_type:
 
 🔹 DSA:
 - Focus on data structures and algorithms.
-- If applicable, use ${interview.custom_focus_areas || 'default patterns'}.
+- If applicable, use ${interview.custom_focus_areas || "default patterns"}.
 - Ask coding questions with "code" field containing ONLY docstring + function signature.
 
 🔹 HR / Behaviour:
@@ -340,31 +376,32 @@ Use this format:
   "text": "your verbal message",
   "code": "starter code or null"
 }
-`}
+`
+}
 
 ---
 
 💬 Conversation Context:
-${conversationHistory ? `\n${conversationHistory}` : 'No prior conversation yet.'}
+${
+  conversationHistory
+    ? `\n${conversationHistory}`
+    : "No prior conversation yet."
+}
 
 🔚 End of system prompt.
 `;
 
-
-    const apiMessages = currentConversation.map(msg => ({
-      role: msg.sender === 'ai' ? 'assistant' : 'user',
-      content: msg.text
+    const apiMessages = currentConversation.map((msg) => ({
+      role: msg.sender === "ai" ? "assistant" : "user",
+      content: msg.text,
     }));
 
     try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          messages: [
-            { role: 'system', content: systemPrompt },
-            ...apiMessages
-          ] 
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: [{ role: "system", content: systemPrompt }, ...apiMessages],
         }),
       });
 
@@ -372,31 +409,52 @@ ${conversationHistory ? `\n${conversationHistory}` : 'No prior conversation yet.
         // Log the server's error response for better debugging
         const errorBody = await response.json();
         console.error("Server responded with an error:", errorBody);
-        throw new Error(`AI response failed: ${errorBody.error || response.statusText}`);
+        throw new Error(
+          `AI response failed: ${errorBody.error || response.statusText}`
+        );
       }
-      
+
       const aiMessage = await response.json();
+      // console.log(aiMessage);
       // It's possible the model doesn't respect the JSON format perfectly.
       try {
-        const aiContent = typeof aiMessage.content === 'string' ? JSON.parse(aiMessage.content) : aiMessage.content;
-        
-        setConversationLog(prev => [...prev, {
-          sender: 'ai',
-          text: aiContent.text,
-          code: aiContent.code || null,
-        }]);
+        const aiContent =
+          typeof aiMessage.content === "string"
+            ? JSON.parse(aiMessage.content)
+            : aiMessage.content;
+
+        setConversationLog((prev) => [
+          ...prev,
+          {
+            sender: "ai",
+            text: aiContent.text,
+            code: aiContent.code || null,
+          },
+        ]);
 
         if (aiContent.code) {
           setCode(aiContent.code);
         }
       } catch (parseError) {
-          console.error("Failed to parse AI response as JSON:", aiMessage.content);
-          // Handle non-JSON response from AI
-          setConversationLog(prev => [...prev, { sender: 'ai', text: aiMessage.content, code: null }]);
+        console.error(
+          "Failed to parse AI response as JSON:",
+          aiMessage.content
+        );
+        // Handle non-JSON response from AI
+        setConversationLog((prev) => [
+          ...prev,
+          { sender: "ai", text: aiMessage.content, code: null },
+        ]);
       }
     } catch (err) {
-      console.error('Error fetching AI response:', err);
-      setConversationLog(prev => [...prev, { sender: 'ai', text: "I'm sorry, I encountered an error. Could you please repeat that?" }]);
+      console.error("Error fetching AI response:", err);
+      setConversationLog((prev) => [
+        ...prev,
+        {
+          sender: "ai",
+          text: "I'm sorry, I encountered an error. Could you please repeat that?",
+        },
+      ]);
     } finally {
       setIsAiTyping(false);
     }
@@ -416,7 +474,7 @@ ${conversationHistory ? `\n${conversationHistory}` : 'No prior conversation yet.
     const lastMessage = conversationLog[conversationLog.length - 1];
 
     // 1. Only act on messages from the AI.
-    if (lastMessage.sender !== 'ai') return;
+    if (lastMessage.sender !== "ai") return;
 
     // 2. If this is the same text we were last told to speak, do nothing. This prevents the loop.
     if (lastMessage.text === lastSpokenTextRef.current) return;
@@ -427,24 +485,24 @@ ${conversationHistory ? `\n${conversationHistory}` : 'No prior conversation yet.
     // 4. Update our reference to the new text and speak it.
     lastSpokenTextRef.current = lastMessage.text;
     speak(lastMessage.text, { voiceURI });
-
   }, [conversationLog, speak, cancelSpeech, voiceURI]); // Note: isSpeaking is NOT in the dependency array.
 
   // Processes the user's spoken response
   useEffect(() => {
     if (userSpeech && !isListening) {
       // Functional update to prevent race conditions and remove `conversationLog` from dependencies.
-      setConversationLog(prevLog => {
-        const lastMessage = prevLog.length > 0 ? prevLog[prevLog.length - 1] : null;
+      setConversationLog((prevLog) => {
+        const lastMessage =
+          prevLog.length > 0 ? prevLog[prevLog.length - 1] : null;
         // Only add the user's speech if the last message was from the AI.
-        if (lastMessage && lastMessage.sender === 'ai') {
-          return [...prevLog, { sender: 'user', text: userSpeech }];
+        if (lastMessage && lastMessage.sender === "ai") {
+          return [...prevLog, { sender: "user", text: userSpeech }];
         }
         // Otherwise, do not update the log.
         return prevLog;
       });
       // Clear the transcript immediately after processing.
-      setUserSpeech('');
+      setUserSpeech("");
     }
   }, [userSpeech, isListening, setUserSpeech]);
 
@@ -452,7 +510,7 @@ ${conversationHistory ? `\n${conversationHistory}` : 'No prior conversation yet.
   useEffect(() => {
     if (conversationLog.length > 0) {
       const lastMessage = conversationLog[conversationLog.length - 1];
-      if (lastMessage.sender === 'user') {
+      if (lastMessage.sender === "user") {
         getAiResponse(conversationLog);
       }
     }
@@ -461,7 +519,7 @@ ${conversationHistory ? `\n${conversationHistory}` : 'No prior conversation yet.
   // Add error handling for speech recognition
   useEffect(() => {
     if (speechError) {
-      console.error('Speech recognition error:', speechError);
+      console.error("Speech recognition error:", speechError);
       // Show error in toast
       setLiveFeedback(`Speech recognition error: ${speechError}`);
     }
@@ -470,7 +528,7 @@ ${conversationHistory ? `\n${conversationHistory}` : 'No prior conversation yet.
   // Add error handling for speech synthesis
   useEffect(() => {
     if (speechSynthesisError) {
-      console.error('Speech synthesis error:', speechSynthesisError);
+      console.error("Speech synthesis error:", speechSynthesisError);
       // Show error in toast
       setLiveFeedback(`Speech synthesis error: ${speechSynthesisError}`);
     }
@@ -481,7 +539,7 @@ ${conversationHistory ? `\n${conversationHistory}` : 'No prior conversation yet.
     try {
       const constraints = {
         audio: true,
-        video: interview.enable_webcam && requestCamera
+        video: interview.enable_webcam && requestCamera,
       };
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
 
@@ -489,44 +547,49 @@ ${conversationHistory ? `\n${conversationHistory}` : 'No prior conversation yet.
         setVideoStream(stream);
       } else {
         // If video is not enabled for the interview, stop the video track immediately.
-        stream.getVideoTracks().forEach(track => track.stop());
+        stream.getVideoTracks().forEach((track) => track.stop());
       }
-      
-      console.log('Permissions granted successfully!');
+
+      console.log("Permissions granted successfully!");
       setPermissionsGranted(true);
-      setLiveFeedback('Microphone and camera permissions granted successfully');
+      setLiveFeedback("Microphone and camera permissions granted successfully");
     } catch (err) {
-      const errorMessage = err.name === 'NotAllowedError' 
-        ? 'You must grant at least microphone access to continue.'
-        : `Permission error: ${err.message}`;
+      const errorMessage =
+        err.name === "NotAllowedError"
+          ? "You must grant at least microphone access to continue."
+          : `Permission error: ${err.message}`;
       setLiveFeedback(errorMessage);
-      console.error('Permission error:', err);
+      console.error("Permission error:", err);
     }
   };
 
   const handleEmotionLogUpdate = useCallback((newLog) => {
-    setEmotionLog(prev => [...prev, newLog]);
+    setEmotionLog((prev) => [...prev, newLog]);
   }, []);
 
   const handleSubmitCode = (submittedCode) => {
     if (isListening) {
       stopListening();
     }
-    
+
     // Add to code log with timestamp
     const codeSubmission = {
       timestamp: new Date().toISOString(),
       code: submittedCode,
-      question: conversationLog[conversationLog.length - 1]?.text || 'Unknown Question'
+      question:
+        conversationLog[conversationLog.length - 1]?.text || "Unknown Question",
     };
-    
-    setCodeLog(prev => [...prev, codeSubmission]);
-    
-    const newConversationLog = [...conversationLog, {
-      sender: 'user',
-      text: 'I have finished writing my code. Here is my solution.',
-      code: submittedCode,
-    }];
+
+    setCodeLog((prev) => [...prev, codeSubmission]);
+
+    const newConversationLog = [
+      ...conversationLog,
+      {
+        sender: "user",
+        text: "I have finished writing my code. Here is my solution.",
+        code: submittedCode,
+      },
+    ];
     setConversationLog(newConversationLog);
   };
 
@@ -534,20 +597,20 @@ ${conversationHistory ? `\n${conversationHistory}` : 'No prior conversation yet.
     if (isSubmitting) return;
     setIsSubmitting(true);
     setShowConfirmation(false);
-    
+
     // Stop any active listening or speaking
     if (isListening) {
       stopListening();
     }
     cancelSpeech();
-    
+
     try {
       // 1. Gather all data
-      setSubmissionFeedback('Analyzing your interview transcript...');
+      setSubmissionFeedback("Analyzing your interview transcript...");
       const finalTranscript = conversationLog;
-      
+
       // 2. Get Final AI Feedback
-      setSubmissionFeedback('Asking the AI for overall feedback...');
+      setSubmissionFeedback("Asking the AI for overall feedback...");
       const feedbackPrompt = `The interview has now concluded.
 
 You are a senior-level technical recruiter and soft-skill evaluator at a top-tier company. Your task is to provide **professional-level feedback** for the candidate based on the following:
@@ -593,28 +656,30 @@ ${JSON.stringify(emotionLog)}
 Return only the JSON response.
 `;
 
-
-      const apiMessages = conversationLog.map(msg => ({
-        role: msg.sender === 'ai' ? 'assistant' : 'user',
-        content: msg.text
+      const apiMessages = conversationLog.map((msg) => ({
+        role: msg.sender === "ai" ? "assistant" : "user",
+        content: msg.text,
       }));
 
-      const feedbackMessages = [...apiMessages, { role: 'system', content: feedbackPrompt }];
-      
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const feedbackMessages = [
+        ...apiMessages,
+        { role: "system", content: feedbackPrompt },
+      ];
+
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ messages: feedbackMessages }),
       });
-      if (!response.ok) throw new Error('Failed to get final AI feedback.');
-      
+      if (!response.ok) throw new Error("Failed to get final AI feedback.");
+
       const finalAiMessage = await response.json();
       const finalAiFeedback = finalAiMessage;
 
       // 3. Update Supabase
-      setSubmissionFeedback('Saving your results to the database...');
+      setSubmissionFeedback("Saving your results to the database...");
       const { error: updateError } = await supabase
-        .from('interviews')
+        .from("interviews")
         .update({
           transcript: finalTranscript,
           code_snippet: codeLog,
@@ -622,20 +687,30 @@ Return only the JSON response.
           ai_feedback: finalAiFeedback,
           ended_at: new Date().toISOString(),
         })
-        .eq('id', id);
+        .eq("id", id);
 
       if (updateError) throw updateError;
 
       // 4. Redirect
-      setSubmissionFeedback('All done! Redirecting to your results...');
+      setSubmissionFeedback("All done! Redirecting to your results...");
       router.push(`/feedback/${id}`);
-
     } catch (err) {
-      console.error('Error during submission:', err);
-      alert('There was an error submitting your interview. Please try again.');
+      console.error("Error during submission:", err);
+      alert("There was an error submitting your interview. Please try again.");
       setIsSubmitting(false);
     }
-  }, [isSubmitting, isListening, stopListening, conversationLog, code, id, router, cancelSpeech, emotionLog, codeLog]);
+  }, [
+    isSubmitting,
+    isListening,
+    stopListening,
+    conversationLog,
+    code,
+    id,
+    router,
+    cancelSpeech,
+    emotionLog,
+    codeLog,
+  ]);
 
   const handleTimeUp = useCallback(() => {
     handleSubmitInterview();
@@ -662,12 +737,32 @@ Return only the JSON response.
           </span>
         </div>
         <div className="flex flex-col items-center">
-          <svg className="animate-spin h-10 w-10 text-indigo-400 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+          <svg
+            className="animate-spin h-10 w-10 text-indigo-400 mb-4"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="4"
+            ></circle>
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+            ></path>
           </svg>
-          <div className="text-lg font-medium tracking-wide mb-1">Loading your interview...</div>
-          <div className="text-sm text-gray-400">Setting up your personalized experience. Please wait.</div>
+          <div className="text-lg font-medium tracking-wide mb-1">
+            Loading your interview...
+          </div>
+          <div className="text-sm text-gray-400">
+            Setting up your personalized experience. Please wait.
+          </div>
         </div>
       </div>
     );
@@ -676,34 +771,34 @@ Return only the JSON response.
   if (error) {
     notFound(); // Redirect to a 404 page if interview is not found or an error occurs
   }
-  
-  const messagesForChat = conversationLog.map(msg => ({
-    role: msg.sender === 'ai' ? 'assistant' : 'user',
-    content: msg.text
+
+  const messagesForChat = conversationLog.map((msg) => ({
+    role: msg.sender === "ai" ? "assistant" : "user",
+    content: msg.text,
   }));
 
   return (
     <div className="bg-gray-900 text-white min-h-screen">
       {isSubmitting && <SubmissionOverlay feedback={submissionFeedback} />}
-      <ConfirmationModal 
+      <ConfirmationModal
         isOpen={showConfirmation}
         onClose={() => setShowConfirmation(false)}
         onConfirm={handleSubmitInterview}
       />
       {!permissionsGranted && interview && (
-        <PermissionsPrompt 
+        <PermissionsPrompt
           onPermissionsGranted={handlePermissionsGranted}
           isCameraEnabled={interview.enable_webcam}
           requestCamera={requestCamera}
           setRequestCamera={setRequestCamera}
         />
       )}
-      
+
       <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-6">
         {/* Header Section */}
         <header className="flex justify-between items-center bg-gray-800/50 backdrop-blur-sm p-4 rounded-xl border border-gray-700/50">
           <div className="flex items-center space-x-6">
-          <div>
+            <div>
               <h1 className="text-2xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
                 {interview.job_role}
               </h1>
@@ -711,12 +806,24 @@ Return only the JSON response.
             </div>
             <div className="h-8 w-px bg-gray-700"></div>
             <div className="text-sm text-gray-400">
-              <p>Difficulty: <span className="text-indigo-400">{interview.difficulty_level}</span></p>
-              <p>Duration: <span className="text-indigo-400">{interview.duration} minutes</span></p>
+              <p>
+                Difficulty:{" "}
+                <span className="text-indigo-400">
+                  {interview.difficulty_level}
+                </span>
+              </p>
+              <p>
+                Duration:{" "}
+                <span className="text-indigo-400">
+                  {interview.duration} minutes
+                </span>
+              </p>
             </div>
           </div>
           <div className="flex items-center space-x-4">
-            {permissionsGranted && <Timer duration={interview.duration} onTimeUp={handleTimeUp} />}
+            {permissionsGranted && (
+              <Timer duration={interview.duration} onTimeUp={handleTimeUp} />
+            )}
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
@@ -744,7 +851,9 @@ Return only the JSON response.
                       </div>
                       <div>
                         <h3 className="font-medium">AI Interviewer</h3>
-                        <p className="text-sm text-gray-400">{interview.interviewer_personality}</p>
+                        <p className="text-sm text-gray-400">
+                          {interview.interviewer_personality}
+                        </p>
                       </div>
                     </div>
                     <div className="h-24 bg-gray-700/30 rounded-lg flex items-center justify-center">
@@ -754,11 +863,15 @@ Return only the JSON response.
                           <motion.div
                             key={`ai-waveform-${i}`}
                             className="w-1 bg-indigo-500 rounded-full"
-                            animate={isSpeaking ? {
-                              height: [20, 40, 20],
-                            } : {
-                              height: 20,
-                            }}
+                            animate={
+                              isSpeaking
+                                ? {
+                                    height: [20, 40, 20],
+                                  }
+                                : {
+                                    height: 20,
+                                  }
+                            }
                             transition={{
                               duration: 1,
                               repeat: isSpeaking ? Infinity : 0,
@@ -795,9 +908,13 @@ Return only the JSON response.
                         </p>
                       </div>
                     </div>
-                    <div className={`${interview.enable_webcam && videoStream ? 'h-48' : 'h-24'} bg-gray-700/30 rounded-lg flex items-center justify-center overflow-hidden`}>
+                    <div
+                      className={`${
+                        interview.enable_webcam && videoStream ? "h-48" : "h-24"
+                      } bg-gray-700/30 rounded-lg flex items-center justify-center overflow-hidden`}
+                    >
                       {interview.enable_webcam && videoStream ? (
-                        <FacialFeedback 
+                        <FacialFeedback
                           stream={videoStream}
                           onEmotionLogUpdate={handleEmotionLogUpdate}
                           isInterviewActive={permissionsGranted}
@@ -809,11 +926,15 @@ Return only the JSON response.
                             <motion.div
                               key={`user-waveform-${i}`}
                               className="w-1 bg-purple-500 rounded-full"
-                              animate={isListening ? {
-                                height: [20, 40, 20],
-                              } : {
-                                height: 20,
-                              }}
+                              animate={
+                                isListening
+                                  ? {
+                                      height: [20, 40, 20],
+                                    }
+                                  : {
+                                      height: 20,
+                                    }
+                              }
                               transition={{
                                 duration: 1,
                                 repeat: isListening ? Infinity : 0,
@@ -828,22 +949,25 @@ Return only the JSON response.
                 </div>
 
                 {/* AI Question Section */}
-              <InterviewerChatArea messages={messagesForChat} isAiTyping={isAiTyping} />
+                <InterviewerChatArea
+                  messages={messagesForChat}
+                  isAiTyping={isAiTyping}
+                />
               </div>
 
               {/* Right Column - Mic Controls */}
               <div className="lg:col-span-3 space-y-4">
                 {/* Mic Controls Box */}
                 <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-4 border border-gray-700/50">
-              <UserTranscriptArea 
-                isListening={isListening}
-                transcript={userSpeech}
-                startListening={() => {
-                  cancelSpeech();
-                  startListening();
-                }}
-                stopListening={stopListening}
-              />
+                  <UserTranscriptArea
+                    isListening={isListening}
+                    transcript={userSpeech}
+                    startListening={() => {
+                      cancelSpeech();
+                      startListening();
+                    }}
+                    stopListening={stopListening}
+                  />
                 </div>
 
                 {/* Live Transcript Preview - Only show when speaking */}
@@ -855,9 +979,14 @@ Return only the JSON response.
                   >
                     <div className="flex items-center space-x-2 mb-2">
                       <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-                      <h4 className="text-sm font-medium text-gray-400">Recording...</h4>
+                      <h4 className="text-sm font-medium text-gray-400">
+                        Recording...
+                      </h4>
                     </div>
-                    <p className="text-gray-300 text-sm leading-relaxed max-h-32 overflow-y-auto custom-scrollbar" style={{wordBreak: 'break-word'}}>
+                    <p
+                      className="text-gray-300 text-sm leading-relaxed max-h-32 overflow-y-auto custom-scrollbar"
+                      style={{ wordBreak: "break-word" }}
+                    >
                       {userSpeech}
                     </p>
                   </motion.div>
@@ -867,9 +996,9 @@ Return only the JSON response.
 
             {/* Code Editor - Full Width */}
             <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700/50">
-              <CodeEditor 
-                initialCode={code} 
-                onCodeChange={handleCodeChange} 
+              <CodeEditor
+                initialCode={code}
+                onCodeChange={handleCodeChange}
                 onSubmitCode={handleSubmitCode}
               />
             </div>
@@ -898,9 +1027,9 @@ Return only the JSON response.
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 20 }}
                 className={`${
-                  speechError || speechSynthesisError 
-                    ? 'bg-red-600/90' 
-                    : 'bg-gray-800/90'
+                  speechError || speechSynthesisError
+                    ? "bg-red-600/90"
+                    : "bg-gray-800/90"
                 } backdrop-blur-sm text-white px-4 py-2 rounded-lg shadow-lg flex items-center space-x-2 border border-gray-700/50`}
               >
                 {speechError || speechSynthesisError ? (
@@ -915,5 +1044,5 @@ Return only the JSON response.
         </div>
       </div>
     </div>
-  )
-} 
+  );
+}

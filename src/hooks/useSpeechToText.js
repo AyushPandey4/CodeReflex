@@ -50,32 +50,16 @@ export function useSpeechToText() {
 
       recognition.onresult = (event) => {
         try {
-          let fullTranscript = '';
+          let finalTranscript = '';
+          let interimTranscript = '';
           for (let i = event.resultIndex; i < event.results.length; ++i) {
-            fullTranscript += event.results[i][0].transcript;
+            if (event.results[i].isFinal) {
+              finalTranscript += event.results[i][0].transcript;
+            } else {
+              interimTranscript += event.results[i][0].transcript;
+            }
           }
-          if (!fullTranscript) return;
-      
-          setTranscript(prevTranscript => {
-            // If the new transcript is already at the end, don't append
-            if (prevTranscript.endsWith(fullTranscript)) {
-              return prevTranscript;
-            }
-            // If the new transcript contains the previous transcript, only append the new part
-            if (fullTranscript.startsWith(prevTranscript)) {
-              return fullTranscript;
-            }
-            // Otherwise, try to find the largest overlap
-            let overlap = '';
-            for (let i = 1; i < fullTranscript.length; i++) {
-              if (prevTranscript.endsWith(fullTranscript.substring(0, i))) {
-                overlap = fullTranscript.substring(0, i);
-              }
-            }
-            return prevTranscript + fullTranscript.substring(overlap.length);
-          });
-      
-          lastTranscriptRef.current = fullTranscript;
+          setTranscript(prev => prev + finalTranscript + interimTranscript);
           setError(null);
         } catch (err) {
           console.error('Error processing speech result:', err);
