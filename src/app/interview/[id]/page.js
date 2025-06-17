@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { notFound, useParams, useRouter } from 'next/navigation'
-import { Mic, Video, VideoOff, BrainCircuit } from 'lucide-react'
+import { Mic, Video, VideoOff, BrainCircuit, Bot, User } from 'lucide-react'
 import { Timer } from '@/components/Timer'
 import { useSpeechToText } from '@/hooks/useSpeechToText'
 import { useTextToSpeech } from '@/hooks/useTextToSpeech'
@@ -11,37 +11,92 @@ import { UserTranscriptArea } from '@/components/UserTranscriptArea'
 import { InterviewerChatArea } from '@/components/InterviewerChatArea'
 import { CodeEditor } from '@/components/CodeEditor'
 import FacialFeedback from '@/components/FacialFeedback'
+import { motion, AnimatePresence } from 'framer-motion'
 
 // Placeholder components - we will build these out next
 const PermissionsPrompt = ({ onPermissionsGranted, isCameraEnabled, requestCamera, setRequestCamera }) => (
-  <div className="fixed inset-0 bg-gray-900 bg-opacity-80 flex items-center justify-center z-50">
-    <div className="bg-gray-800 p-8 rounded-lg shadow-2xl text-center max-w-md w-full">
-      <h2 className="text-2xl font-bold text-white mb-4">Ready for your interview?</h2>
-      <p className="text-gray-300 mb-6">
+  <motion.div
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    exit={{ opacity: 0 }}
+    className="fixed inset-0 bg-gray-900/80 backdrop-blur-sm flex items-center justify-center z-50"
+  >
+    <motion.div
+      initial={{ scale: 0.9, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      transition={{ type: "spring", damping: 20 }}
+      className="bg-gray-800/90 backdrop-blur-sm p-8 rounded-2xl shadow-2xl text-center max-w-md w-full mx-4 border border-gray-700/50"
+    >
+      {/* Logo and Title */}
+      <div className="flex items-center justify-center space-x-3 mb-6">
+        <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20">
+          <span className="text-white font-bold text-xl">CR</span>
+        </div>
+        <h2 className="text-2xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
+          Ready for your interview?
+        </h2>
+      </div>
+
+      {/* Description */}
+      <p className="text-gray-300 mb-8 leading-relaxed">
         We need microphone access to hear your responses. Camera access is optional but recommended for emotion feedback.
       </p>
       
+      {/* Camera Toggle */}
       {isCameraEnabled && (
-        <div className="flex items-center justify-center space-x-4 mb-6">
-          <p className="text-gray-300">Camera for feedback:</p>
-          <button 
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="flex items-center justify-center space-x-4 mb-8 p-4 bg-gray-700/30 rounded-xl"
+        >
+          <div className="flex-1 text-left">
+            <p className="text-gray-300 font-medium">Enable Camera</p>
+            <p className="text-sm text-gray-400">For real-time emotion feedback</p>
+          </div>
+          <motion.button 
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             onClick={() => setRequestCamera(!requestCamera)}
-            className={`p-2 rounded-full transition-colors ${requestCamera ? 'bg-blue-600' : 'bg-gray-600'}`}
+            className={`relative p-2 rounded-full transition-colors ${
+              requestCamera 
+                ? 'bg-indigo-500 hover:bg-indigo-600' 
+                : 'bg-gray-600 hover:bg-gray-500'
+            }`}
           >
-            <Video className="h-5 w-5" />
-          </button>
-        </div>
+            <Video className={`h-5 w-5 transition-colors ${
+              requestCamera ? 'text-white' : 'text-gray-400'
+            }`} />
+            {requestCamera && (
+              <motion.div
+                layoutId="cameraToggle"
+                className="absolute inset-0 rounded-full border-2 border-indigo-500"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+              />
+            )}
+          </motion.button>
+        </motion.div>
       )}
 
-      <button 
+      {/* Permissions Button */}
+      <motion.button
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
         onClick={onPermissionsGranted} 
-        className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors w-full flex items-center justify-center"
+        className="w-full bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white px-6 py-4 rounded-xl transition-all flex items-center justify-center space-x-2 shadow-lg shadow-indigo-500/20"
       >
-        <Mic className="h-5 w-5 mr-2" />
-        Grant Permissions & Start
-      </button>
-    </div>
-  </div>
+        <Mic className="h-5 w-5" />
+        <span className="font-medium">Grant Permissions & Start</span>
+      </motion.button>
+
+      {/* Privacy Note */}
+      <p className="mt-4 text-sm text-gray-400">
+        Your privacy is important. We only use your camera and microphone during the interview.
+      </p>
+    </motion.div>
+  </motion.div>
 );
 
 const SubmissionOverlay = ({ feedback }) => (
@@ -54,6 +109,64 @@ const SubmissionOverlay = ({ feedback }) => (
   </div>
 );
 
+const ConfirmationModal = ({ isOpen, onClose, onConfirm }) => (
+  <AnimatePresence>
+    {isOpen && (
+      <motion.div
+        key="modal-overlay"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 bg-gray-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      >
+        <motion.div
+          key="modal-content"
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0.9, opacity: 0 }}
+          transition={{ type: "spring", damping: 20 }}
+          className="bg-gray-800/90 backdrop-blur-sm p-8 rounded-2xl shadow-2xl text-center max-w-md w-full mx-4 border border-gray-700/50"
+        >
+          {/* Icon */}
+          <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-indigo-500/20">
+            <BrainCircuit className="h-8 w-8 text-white" />
+          </div>
+
+          {/* Title */}
+          <h2 className="text-2xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent mb-4">
+            End Interview?
+          </h2>
+
+          {/* Description */}
+          <p className="text-gray-300 mb-8 leading-relaxed">
+            Are you sure you want to end this interview? Your responses will be analyzed and you'll receive detailed feedback.
+          </p>
+
+          {/* Buttons */}
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={onClose}
+              className="px-6 py-3 rounded-xl bg-gray-700/50 hover:bg-gray-700 text-gray-300 transition-colors flex-1"
+            >
+              Continue Interview
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={onConfirm}
+              className="px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white transition-colors flex-1 shadow-lg shadow-indigo-500/20"
+            >
+              End & Submit
+            </motion.button>
+          </div>
+        </motion.div>
+      </motion.div>
+    )}
+  </AnimatePresence>
+);
+
 export default function InterviewPage() {
   const { id } = useParams()
   const router = useRouter()
@@ -64,16 +177,19 @@ export default function InterviewPage() {
   const [requestCamera, setRequestCamera] = useState(true)
   
   const [conversationLog, setConversationLog] = useState([])
+  const [codeLog, setCodeLog] = useState([])
   const [isAiTyping, setIsAiTyping] = useState(false)
   const [code, setCode] = useState('// Your code here...');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionFeedback, setSubmissionFeedback] = useState('Gathering your responses...');
+  const [liveFeedback, setLiveFeedback] = useState('');
   const lastSpokenTextRef = useRef(null);
   const [emotionLog, setEmotionLog] = useState([]);
   const [videoStream, setVideoStream] = useState(null);
+  const [showConfirmation, setShowConfirmation] = useState(false);
 
-  const { isListening, transcript: userSpeech, startListening, stopListening, setTranscript: setUserSpeech } = useSpeechToText()
-  const { speak, cancel: cancelSpeech, isSpeaking } = useTextToSpeech();
+  const { isListening, transcript: userSpeech, startListening, stopListening, setTranscript: setUserSpeech, error: speechError } = useSpeechToText()
+  const { speak, cancel: cancelSpeech, isSpeaking, error: speechSynthesisError } = useTextToSpeech();
   const [voiceURI, setVoiceURI] = useState('');
 
   useEffect(() => {
@@ -132,36 +248,108 @@ export default function InterviewPage() {
     const lastMessage = currentConversation[currentConversation.length - 1];
     const isCodeSubmission = lastMessage?.sender === 'user' && lastMessage?.code;
 
-    const systemPrompt = `You are a professional technical interviewer for CodeReflex.
-Your persona: "${interview.interviewer_personality}"
-The interview is for a ${interview.job_role} role at ${interview.company_name} (${interview.difficulty_level} difficulty).
+    const systemPrompt = `You are a highly professional and realistic AI Interviewer for CodeReflex.
 
-**Your Core Rules:**
-1.  **You are the INTERVIEWER, not the solver.** Your one and only job is to ask questions and evaluate the user's responses.
-2.  **NEVER provide the solution** to a coding problem before the user has attempted it.
-3.  You **MUST ALWAYS** reply in a single JSON object with two keys: "text" (your spoken response) and "code" (a string for the code editor, or null).
-
-**JSON Response Rules:**
--   **"text"**: Your conversational part. What you would say out loud.
--   **"code"**: ONLY for providing the problem statement or starter code.
-    -   **Good Example (Problem Setup):** \`{"text": "Let's start with a coding challenge. Can you implement this function?", "code": "/**\\n * Given an array of integers, return indices of the two numbers such that they add up to a specific target.\\n * @param {number[]} nums\\n * @param {number} target\\n * @return {number[]}\\n */\\nfunction twoSum(nums, target) {\\n  // Your code here...\\n}"}\`
-    -   **Bad Example (Providing Solution):** \`{"text": "Here is how you do it.", "code": "function twoSum(nums, target) { let map = new Map(); for(let i=0; i<nums.length; i++) { /* ...solution logic... */ } }"}\`
+🧠 Persona & Context:
+- Interviewer Personality: "${interview.interviewer_personality}"
+- Role: ${interview.job_role}
+- Company: ${interview.company_name}
+- Difficulty: ${interview.difficulty_level}
+- Type: ${interview.interview_type.toUpperCase()}
+- Duration: ${interview.duration} minutes
+- Focus Areas: ${interview.custom_focus_areas || 'None specified'}
+- Preferred Language: Ask the user if not already known.
+- Resume: ${interview.resume_text}
+- Job Description: ${interview.job_description}
 
 ---
-**Conversation Context:**
-${conversationHistory ? `Conversation History:\\n${conversationHistory}` : 'This is the beginning of the interview.'}
+
+🎭 **Tone Style Based on Interviewer Personality:**
+- "Challenging": Ask complex, high-pressure, edge-case-oriented questions with minimal help.
+- "Supportive": Be kind, encouraging, and provide soft guidance or clarifying follow-ups.
+- "Straight-to-the-point": Keep it crisp, minimal intro, rapid progression.
+
+Adapt your tone and pacing accordingly. Maintain professionalism and realism.
+
 ---
 
-**Your Current Task:**
+📌 **Core Directives:**
+1. You are the **interviewer**, not the solver.
+2. NEVER provide a complete solution (text or code).
+3. Always respond in **valid JSON** format:
+   \`\`\`json
+   {
+     "text": "Your spoken response",
+     "code": "Starter code or problem, or null"
+   }
+   \`\`\`
+
+❗Invalid formats, solutions, or extra JSON fields are NOT allowed.
+
+---
+
+🎯 **Dynamic Interview Flow Logic:**
+
 ${isCodeSubmission
-  ? `The user has just submitted their code. Your task is to **EVALUATE** it.
-   - In your "text" response, provide feedback on their solution. Discuss its correctness, efficiency (time/space complexity), and style.
-   - Ask a relevant follow-up question about their code.
-   - Set the "code" field to null. **DO NOT** provide a corrected or alternative solution in the code block.`
-  : `Your task is to ask the **NEXT** interview question.
-   - If it is a behavioral or theoretical question, set the "code" field to null.
-   - If it is a coding question, set the "text" field to introduce the problem and set the "code" field to the problem statement and function signature, as shown in the examples. **DO NOT** include the solution logic.`
-}`;
+? `
+🧪 Code has been submitted.
+
+Your task:
+- Evaluate like a senior ${interview.job_role} interviewer at ${interview.company_name}.
+- Give concise feedback on:
+   - Correctness
+   - Time/space complexity
+   - Code structure/readability
+- Ask a follow-up question about edge cases, optimization, or tradeoffs.
+- Do NOT fix the code.
+- Set "code": null
+`
+: `
+🧭 Continue the interview.
+
+If you haven't yet, start by asking:
+- "What's your preferred programming language?" (for coding roles)
+
+Then based on interview_type:
+
+🔹 DSA:
+- Focus on data structures and algorithms.
+- If applicable, use ${interview.custom_focus_areas || 'default patterns'}.
+- Ask coding questions with "code" field containing ONLY docstring + function signature.
+
+🔹 HR / Behaviour:
+- Refer to the resume and ask role- or culture-fit questions.
+- Use STAR-style scenarios: conflict, failure, teamwork, leadership, etc.
+
+🔹 System Design:
+- Start with high-level open-ended problems.
+- Ask for components, tradeoffs, scalability, data flow.
+- Avoid code — use only text. Set "code": null.
+
+🔹 Full Stack:
+- Ask web/app architecture, API design, DB schema, frontend/backend interactions.
+- Ask frontend OR backend logic as needed.
+
+🔹 Mixed:
+- Dynamically blend HR + technical questions in natural order.
+
+⚠️ Always be conversational, adaptive, and realistic. No robotic behavior. Never make up irrelevant or vague questions.
+
+Use this format:
+{
+  "text": "your verbal message",
+  "code": "starter code or null"
+}
+`}
+
+---
+
+💬 Conversation Context:
+${conversationHistory ? `\n${conversationHistory}` : 'No prior conversation yet.'}
+
+🔚 End of system prompt.
+`;
+
 
     const apiMessages = currentConversation.map(msg => ({
       role: msg.sender === 'ai' ? 'assistant' : 'user',
@@ -245,14 +433,20 @@ ${isCodeSubmission
   // Processes the user's spoken response
   useEffect(() => {
     if (userSpeech && !isListening) {
-      const lastMessage = conversationLog[conversationLog.length - 1];
-      // Make sure we don't double-add user messages
-      if (lastMessage && lastMessage.sender === 'ai') {
-        setConversationLog(prev => [...prev, { sender: 'user', text: userSpeech }]);
-        setUserSpeech('');
-      }
+      // Functional update to prevent race conditions and remove `conversationLog` from dependencies.
+      setConversationLog(prevLog => {
+        const lastMessage = prevLog.length > 0 ? prevLog[prevLog.length - 1] : null;
+        // Only add the user's speech if the last message was from the AI.
+        if (lastMessage && lastMessage.sender === 'ai') {
+          return [...prevLog, { sender: 'user', text: userSpeech }];
+        }
+        // Otherwise, do not update the log.
+        return prevLog;
+      });
+      // Clear the transcript immediately after processing.
+      setUserSpeech('');
     }
-  }, [userSpeech, isListening, conversationLog, setUserSpeech]);
+  }, [userSpeech, isListening, setUserSpeech]);
 
   // Triggers the AI response after user speaks OR code is submitted
   useEffect(() => {
@@ -264,6 +458,25 @@ ${isCodeSubmission
     }
   }, [conversationLog, interview]); // Now also triggers on code submission
 
+  // Add error handling for speech recognition
+  useEffect(() => {
+    if (speechError) {
+      console.error('Speech recognition error:', speechError);
+      // Show error in toast
+      setLiveFeedback(`Speech recognition error: ${speechError}`);
+    }
+  }, [speechError]);
+
+  // Add error handling for speech synthesis
+  useEffect(() => {
+    if (speechSynthesisError) {
+      console.error('Speech synthesis error:', speechSynthesisError);
+      // Show error in toast
+      setLiveFeedback(`Speech synthesis error: ${speechSynthesisError}`);
+    }
+  }, [speechSynthesisError]);
+
+  // Update handlePermissionsGranted to handle errors better
   const handlePermissionsGranted = async () => {
     try {
       const constraints = {
@@ -281,8 +494,12 @@ ${isCodeSubmission
       
       console.log('Permissions granted successfully!');
       setPermissionsGranted(true);
+      setLiveFeedback('Microphone and camera permissions granted successfully');
     } catch (err) {
-      alert('You must grant at least microphone access to continue.');
+      const errorMessage = err.name === 'NotAllowedError' 
+        ? 'You must grant at least microphone access to continue.'
+        : `Permission error: ${err.message}`;
+      setLiveFeedback(errorMessage);
       console.error('Permission error:', err);
     }
   };
@@ -291,9 +508,32 @@ ${isCodeSubmission
     setEmotionLog(prev => [...prev, newLog]);
   }, []);
 
+  const handleSubmitCode = (submittedCode) => {
+    if (isListening) {
+      stopListening();
+    }
+    
+    // Add to code log with timestamp
+    const codeSubmission = {
+      timestamp: new Date().toISOString(),
+      code: submittedCode,
+      question: conversationLog[conversationLog.length - 1]?.text || 'Unknown Question'
+    };
+    
+    setCodeLog(prev => [...prev, codeSubmission]);
+    
+    const newConversationLog = [...conversationLog, {
+      sender: 'user',
+      text: 'I have finished writing my code. Here is my solution.',
+      code: submittedCode,
+    }];
+    setConversationLog(newConversationLog);
+  };
+
   const handleSubmitInterview = useCallback(async () => {
     if (isSubmitting) return;
     setIsSubmitting(true);
+    setShowConfirmation(false);
     
     // Stop any active listening or speaking
     if (isListening) {
@@ -308,8 +548,52 @@ ${isCodeSubmission
       
       // 2. Get Final AI Feedback
       setSubmissionFeedback('Asking the AI for overall feedback...');
-      const feedbackPrompt = `The interview has now concluded. Based on the entire transcript, please provide overall feedback for the candidate. Address their strengths and weaknesses in communication, technical knowledge (if applicable), and problem-solving. Keep the feedback constructive and encouraging. Here is the transcript:\n\n${JSON.stringify(finalTranscript)}`;
-      
+      const feedbackPrompt = `The interview has now concluded.
+
+You are a senior-level technical recruiter and soft-skill evaluator at a top-tier company. Your task is to provide **professional-level feedback** for the candidate based on the following:
+
+---
+
+📄 Transcript:
+${JSON.stringify(finalTranscript)}
+
+📈 Emotion log (chronological order):
+${JSON.stringify(emotionLog)}
+
+---
+
+🧠 You must return a valid JSON response with **four keys**:
+
+1. **"interview_feedback"** (String):  
+   - Assess technical strengths/weaknesses  
+   - Comment on problem-solving, communication, and collaboration  
+   - Give constructive suggestions  
+
+2. **"emotional_feedback"** (String):  
+   - Analyze patterns from the emotion log: confidence, stress, hesitation, enthusiasm  
+   - Identify behavioral cues and how they evolved during the interview  
+
+3. **"final_rating"** (Number, from 0 to 10):  
+   - Rate the overall performance (consider knowledge, clarity, soft skills, composure)  
+   - Use integers or one decimal point (e.g., 7.5)  
+
+4. **"recommendation"** (String):  
+   Choose one of:
+   - "Advance to next round"  
+   - "Needs improvement"  
+   - "Strongly recommended"  
+
+---
+
+✅ The tone should be professional, encouraging, and realistic.  
+❌ Do NOT include any code, emotion logs, or unrelated commentary.  
+✅ Format your answer **strictly as JSON**.  
+✅ Total word count must stay under 400 words.
+
+Return only the JSON response.
+`;
+
+
       const apiMessages = conversationLog.map(msg => ({
         role: msg.sender === 'ai' ? 'assistant' : 'user',
         content: msg.text
@@ -325,7 +609,7 @@ ${isCodeSubmission
       if (!response.ok) throw new Error('Failed to get final AI feedback.');
       
       const finalAiMessage = await response.json();
-      const finalAiFeedback = finalAiMessage.content;
+      const finalAiFeedback = finalAiMessage;
 
       // 3. Update Supabase
       setSubmissionFeedback('Saving your results to the database...');
@@ -333,7 +617,7 @@ ${isCodeSubmission
         .from('interviews')
         .update({
           transcript: finalTranscript,
-          code_snippet: code,
+          code_snippet: codeLog,
           emotion_summary: emotionLog,
           ai_feedback: finalAiFeedback,
           ended_at: new Date().toISOString(),
@@ -351,7 +635,7 @@ ${isCodeSubmission
       alert('There was an error submitting your interview. Please try again.');
       setIsSubmitting(false);
     }
-  }, [isSubmitting, isListening, stopListening, conversationLog, code, id, router, cancelSpeech, emotionLog]);
+  }, [isSubmitting, isListening, stopListening, conversationLog, code, id, router, cancelSpeech, emotionLog, codeLog]);
 
   const handleTimeUp = useCallback(() => {
     handleSubmitInterview();
@@ -361,20 +645,32 @@ ${isCodeSubmission
     setCode(newCode);
   };
 
-  const handleSubmitCode = (submittedCode) => {
-    if (isListening) {
-      stopListening();
-    }
-    const newConversationLog = [...conversationLog, {
-      sender: 'user',
-      text: 'I have finished writing my code. Here is my solution.',
-      code: submittedCode,
-    }];
-    setConversationLog(newConversationLog);
+  // New function to handle the initial submit click
+  const handleSubmitClick = () => {
+    setShowConfirmation(true);
   };
 
   if (loading) {
-    return <div className="flex items-center justify-center min-h-screen bg-gray-900 text-white">Loading interview...</div>
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-gray-900 via-indigo-900 to-purple-900 text-white">
+        <div className="flex items-center space-x-4 mb-6">
+          <div className="w-14 h-14 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/30 animate-pulse">
+            <span className="text-white font-bold text-2xl">CR</span>
+          </div>
+          <span className="text-3xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
+            CodeReflex
+          </span>
+        </div>
+        <div className="flex flex-col items-center">
+          <svg className="animate-spin h-10 w-10 text-indigo-400 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+          </svg>
+          <div className="text-lg font-medium tracking-wide mb-1">Loading your interview...</div>
+          <div className="text-sm text-gray-400">Setting up your personalized experience. Please wait.</div>
+        </div>
+      </div>
+    );
   }
 
   if (error) {
@@ -387,8 +683,13 @@ ${isCodeSubmission
   }));
 
   return (
-    <div className="bg-gray-900 text-white min-h-screen p-4 md:p-8">
+    <div className="bg-gray-900 text-white min-h-screen">
       {isSubmitting && <SubmissionOverlay feedback={submissionFeedback} />}
+      <ConfirmationModal 
+        isOpen={showConfirmation}
+        onClose={() => setShowConfirmation(false)}
+        onConfirm={handleSubmitInterview}
+      />
       {!permissionsGranted && interview && (
         <PermissionsPrompt 
           onPermissionsGranted={handlePermissionsGranted}
@@ -398,45 +699,220 @@ ${isCodeSubmission
         />
       )}
       
-      <div className="max-w-6xl mx-auto space-y-6">
-        <header className="flex justify-between items-center bg-gray-800 p-4 rounded-lg">
+      <div className="max-w-7xl mx-auto p-4 md:p-6 space-y-6">
+        {/* Header Section */}
+        <header className="flex justify-between items-center bg-gray-800/50 backdrop-blur-sm p-4 rounded-xl border border-gray-700/50">
+          <div className="flex items-center space-x-6">
           <div>
-            <h1 className="text-2xl font-bold">{interview.job_role} Interview</h1>
-            <p className="text-gray-400">with {interview.company_name}</p>
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
+                {interview.job_role}
+              </h1>
+              <p className="text-gray-400">{interview.company_name}</p>
+            </div>
+            <div className="h-8 w-px bg-gray-700"></div>
+            <div className="text-sm text-gray-400">
+              <p>Difficulty: <span className="text-indigo-400">{interview.difficulty_level}</span></p>
+              <p>Duration: <span className="text-indigo-400">{interview.duration} minutes</span></p>
+            </div>
           </div>
           <div className="flex items-center space-x-4">
             {permissionsGranted && <Timer duration={interview.duration} onTimeUp={handleTimeUp} />}
-            <button onClick={handleSubmitInterview} className="bg-green-600 px-6 py-2 rounded-lg hover:bg-green-700">Submit Interview</button>
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={handleSubmitClick}
+              className="bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 px-6 py-2 rounded-lg flex items-center space-x-2 shadow-lg shadow-indigo-500/20"
+            >
+              <span>Submit Interview</span>
+            </motion.button>
           </div>
         </header>
 
         {permissionsGranted && (
-          <main className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 space-y-6">
+          <main className="space-y-6">
+            {/* Interview Panel */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              {/* Left Column - Interview Panel */}
+              <div className="lg:col-span-9 space-y-6">
+                {/* AI and User Panels */}
+                <div className="grid grid-cols-2 gap-6">
+                  {/* AI Panel */}
+                  <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-4 border border-gray-700/50">
+                    <div className="flex items-center space-x-3 mb-4">
+                      <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center">
+                        <Bot className="h-5 w-5 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="font-medium">AI Interviewer</h3>
+                        <p className="text-sm text-gray-400">{interview.interviewer_personality}</p>
+                      </div>
+                    </div>
+                    <div className="h-24 bg-gray-700/30 rounded-lg flex items-center justify-center">
+                      {/* Waveform visualization - only animate when AI is speaking */}
+                      <div className="flex items-center space-x-1">
+                        {[...Array(20)].map((_, i) => (
+                          <motion.div
+                            key={`ai-waveform-${i}`}
+                            className="w-1 bg-indigo-500 rounded-full"
+                            animate={isSpeaking ? {
+                              height: [20, 40, 20],
+                            } : {
+                              height: 20,
+                            }}
+                            transition={{
+                              duration: 1,
+                              repeat: isSpeaking ? Infinity : 0,
+                              delay: i * 0.05,
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* User Panel */}
+                  <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-4 border border-gray-700/50">
+                    <div className="flex items-center space-x-3 mb-4">
+                      <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-600 rounded-lg flex items-center justify-center">
+                        <User className="h-5 w-5 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="font-medium bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                          You
+                        </h3>
+                        <p className="text-sm text-gray-400">
+                          {interview.enable_webcam && videoStream ? (
+                            <span className="flex items-center space-x-1">
+                              <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                              <span>Camera Enabled</span>
+                            </span>
+                          ) : (
+                            <span className="flex items-center space-x-1">
+                              <span className="w-2 h-2 bg-gray-500 rounded-full"></span>
+                              <span>Camera Disabled</span>
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                    <div className={`${interview.enable_webcam && videoStream ? 'h-48' : 'h-24'} bg-gray-700/30 rounded-lg flex items-center justify-center overflow-hidden`}>
+                      {interview.enable_webcam && videoStream ? (
+                        <FacialFeedback 
+                          stream={videoStream}
+                          onEmotionLogUpdate={handleEmotionLogUpdate}
+                          isInterviewActive={permissionsGranted}
+                          onFeedbackChange={setLiveFeedback}
+                        />
+                      ) : (
+                        <div className="flex items-center space-x-1">
+                          {[...Array(20)].map((_, i) => (
+                            <motion.div
+                              key={`user-waveform-${i}`}
+                              className="w-1 bg-purple-500 rounded-full"
+                              animate={isListening ? {
+                                height: [20, 40, 20],
+                              } : {
+                                height: 20,
+                              }}
+                              transition={{
+                                duration: 1,
+                                repeat: isListening ? Infinity : 0,
+                                delay: i * 0.05,
+                              }}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* AI Question Section */}
               <InterviewerChatArea messages={messagesForChat} isAiTyping={isAiTyping} />
+              </div>
+
+              {/* Right Column - Mic Controls */}
+              <div className="lg:col-span-3 space-y-4">
+                {/* Mic Controls Box */}
+                <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-4 border border-gray-700/50">
               <UserTranscriptArea 
                 isListening={isListening}
                 transcript={userSpeech}
-                startListening={startListening}
+                startListening={() => {
+                  cancelSpeech();
+                  startListening();
+                }}
                 stopListening={stopListening}
               />
+                </div>
+
+                {/* Live Transcript Preview - Only show when speaking */}
+                {isListening && userSpeech && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-4 border border-gray-700/50"
+                  >
+                    <div className="flex items-center space-x-2 mb-2">
+                      <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                      <h4 className="text-sm font-medium text-gray-400">Recording...</h4>
+                    </div>
+                    <p className="text-gray-300 text-sm leading-relaxed max-h-32 overflow-y-auto custom-scrollbar" style={{wordBreak: 'break-word'}}>
+                      {userSpeech}
+                    </p>
+                  </motion.div>
+                )}
+              </div>
+            </div>
+
+            {/* Code Editor - Full Width */}
+            <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700/50">
               <CodeEditor 
                 initialCode={code} 
                 onCodeChange={handleCodeChange} 
                 onSubmitCode={handleSubmitCode}
               />
             </div>
-            <aside className="space-y-6">
-              {interview.enable_webcam && videoStream && permissionsGranted && (
-                <FacialFeedback 
-                  stream={videoStream} 
-                  onEmotionLogUpdate={handleEmotionLogUpdate} 
-                  isInterviewActive={permissionsGranted} 
-                />
-              )}
-            </aside>
           </main>
         )}
+
+        {/* Toast Notifications - Show mic status, facial feedback, and errors */}
+        <div className="fixed bottom-4 left-4 space-y-2">
+          <AnimatePresence>
+            {isListening && (
+              <motion.div
+                key="mic-status"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 20 }}
+                className="bg-indigo-600 text-white px-4 py-2 rounded-lg shadow-lg flex items-center space-x-2"
+              >
+                <Mic className="h-4 w-4" />
+                <span>Mic On</span>
+              </motion.div>
+            )}
+            {liveFeedback && (
+              <motion.div
+                key="live-feedback"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 20 }}
+                className={`${
+                  speechError || speechSynthesisError 
+                    ? 'bg-red-600/90' 
+                    : 'bg-gray-800/90'
+                } backdrop-blur-sm text-white px-4 py-2 rounded-lg shadow-lg flex items-center space-x-2 border border-gray-700/50`}
+              >
+                {speechError || speechSynthesisError ? (
+                  <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                ) : (
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                )}
+                <span>{liveFeedback}</span>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
     </div>
   )

@@ -1,68 +1,88 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useCallback } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Code, ChevronDown, ChevronUp, Play } from 'lucide-react'
 import Editor from '@monaco-editor/react'
-import { Code, ChevronDown, ChevronUp } from 'lucide-react'
 
-export function CodeEditor({ initialCode, onCodeChange, readOnly = false, onSubmitCode }) {
-  const [isCollapsed, setIsCollapsed] = useState(false)
-  const [code, setCode] = useState(initialCode || '// Your code here...')
+export function CodeEditor({ initialCode, onCodeChange, onSubmitCode, readOnly = false }) {
+  const [isExpanded, setIsExpanded] = useState(true)
+  const [code, setCode] = useState(initialCode)
 
-  useEffect(() => {
-    if (initialCode) {
-      setCode(initialCode)
-    }
-  }, [initialCode])
-
-  const handleEditorChange = (value) => {
+  const handleEditorChange = useCallback((value) => {
     setCode(value)
-    if (onCodeChange) {
-      onCodeChange(value)
-    }
-  }
+    onCodeChange(value)
+  }, [onCodeChange])
+
+  const handleSubmit = useCallback(() => {
+    onSubmitCode(code)
+  }, [code, onSubmitCode])
 
   return (
-    <div className="bg-gray-800 rounded-lg">
-      <button
-        onClick={() => setIsCollapsed(!isCollapsed)}
-        className="w-full flex justify-between items-center p-4 bg-gray-700 rounded-t-lg"
+    <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700/50 overflow-hidden">
+      {/* Editor Header */}
+      <div 
+        className="flex items-center justify-between p-3 bg-gray-800/80 cursor-pointer"
+        onClick={() => setIsExpanded(!isExpanded)}
       >
-        <div className="flex items-center">
-          <Code className="h-5 w-5 mr-2" />
-          <h3 className="text-lg font-semibold">Code Editor</h3>
+        <div className="flex items-center space-x-2">
+          <Code className="w-5 h-5 text-indigo-400" />
+          <span className="text-gray-300">Code Editor</span>
         </div>
-        {isCollapsed ? <ChevronDown /> : <ChevronUp />}
-      </button>
+        <motion.button
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+          className="text-gray-400 hover:text-gray-300"
+        >
+          {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+        </motion.button>
+      </div>
 
-      {!isCollapsed && (
-        <div className="border-t border-gray-600">
-          <div>
-            <Editor
-              height="400px"
-              language="javascript"
-              theme="vs-dark"
-              value={code}
-              onChange={handleEditorChange}
-              options={{
-                readOnly: readOnly,
-                fontSize: 14,
-                minimap: { enabled: false },
-                scrollBeyondLastLine: false,
-              }}
-            />
-          </div>
-          {!readOnly && (
-            <div className="p-2 bg-gray-700/50 flex justify-end border-t border-gray-600">
-              <button 
-                onClick={() => onSubmitCode(code)}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-md transition-colors text-white text-sm"
-              >
-                Submit Code
-              </button>
+      {/* Editor Content */}
+      <AnimatePresence>
+        {isExpanded && (
+          <motion.div
+            key="editor-content"
+            initial={{ height: 0 }}
+            animate={{ height: "auto" }}
+            exit={{ height: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <div className="h-[400px]">
+              <Editor
+                height="100%"
+                defaultLanguage="javascript"
+                value={code}
+                onChange={handleEditorChange}
+                theme="vs-dark"
+                options={{
+                  minimap: { enabled: false },
+                  fontSize: 14,
+                  lineNumbers: 'on',
+                  roundedSelection: false,
+                  scrollBeyondLastLine: false,
+                  automaticLayout: true,
+                  readOnly: readOnly
+                }}
+              />
             </div>
-          )}
-        </div>
-      )}
+            {!readOnly && (
+              <div className="p-3 bg-gray-800/80 border-t border-gray-700/50">
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={handleSubmit}
+                  className="flex items-center space-x-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors"
+                >
+                  <Play className="w-4 h-4" />
+                  <span>Submit Code</span>
+                </motion.button>
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
