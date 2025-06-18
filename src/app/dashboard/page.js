@@ -1,85 +1,42 @@
+// src/app/dashboard/page.js
 'use client'
 
 import { useEffect, useState } from 'react'
-import { getCurrentUser, signOut } from '@/lib/supabase'
+import { useCache } from '@/context/CacheContext'
 import { useRouter } from 'next/navigation'
 import InterviewFormModal from '@/components/InterviewFormModal'
-import { supabase } from '@/lib/supabase'
 import { Calendar, Clock, Building, Briefcase, Trash2, AlertCircle, User, LogOut, ChevronDown } from 'lucide-react'
 import { motion } from 'framer-motion'
 
 export default function Dashboard() {
-  const [user, setUser] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [interviews, setInterviews] = useState([])
+  const { user, interviews, loading, logout, deleteInterview, refreshInterviews } = useCache()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [deleteConfirmation, setDeleteConfirmation] = useState(null)
   const [showProfileMenu, setShowProfileMenu] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const userData = await getCurrentUser()
-        if (!userData) {
-          router.push('/')
-          return
-        }
-        setUser(userData)
-      } catch (error) {
-        console.error('Error fetching user:', error)
-        router.push('/')
-      } finally {
-        setLoading(false)
-      }
+    if (!loading && !user) {
+      router.push('/')
     }
-    fetchUser()
-  }, [router])
+  }, [user, loading, router])
 
-  const fetchInterviews = async () => {
-    if (!user) return;
-    
+  const handleDelete = async (interviewId) => {
     try {
-      const { data, error } = await supabase
-        .from('interviews')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setInterviews(data || []);
+      await deleteInterview(interviewId)
+      setDeleteConfirmation(null)
     } catch (error) {
-      console.error('Error fetching interviews:', error);
+      alert('Failed to delete interview. Please try again.')
     }
-  };
-
-  useEffect(() => {
-    fetchInterviews();
-  }, [user]);
-
-  const handleDeleteInterview = async (interviewId) => {
-    try {
-      const { error } = await supabase
-        .from('interviews')
-        .delete()
-        .eq('id', interviewId);
-
-      if (error) throw error;
-      await fetchInterviews();
-      setDeleteConfirmation(null);
-    } catch (error) {
-      console.error('Error deleting interview:', error);
-      alert('Failed to delete interview. Please try again.');
-    }
-  };
+  }
 
   const handleSignOut = async () => {
-    try {
-      await signOut()
-      router.push('/')
-    } catch (error) {
-      console.error('Error signing out:', error)
-    }
+    await logout()
+  }
+  
+  const handleModalClose = () => {
+      setIsModalOpen(false);
+      refreshInterviews();
   }
 
   const formatDate = (dateString) => {
@@ -90,15 +47,6 @@ export default function Dashboard() {
       hour: '2-digit',
       minute: '2-digit'
     });
-  };
-
-  const getDifficultyColor = (level) => {
-    const colors = {
-      'easy': 'text-green-400',
-      'medium': 'text-yellow-400',
-      'hard': 'text-red-400'
-    };
-    return colors[level.toLowerCase()] || 'text-gray-400';
   };
 
   if (loading) {
@@ -287,7 +235,7 @@ export default function Dashboard() {
 
       <InterviewFormModal 
         isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
+        onClose={handleModalClose} 
       />
 
       {deleteConfirmation && (
@@ -321,7 +269,7 @@ export default function Dashboard() {
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                onClick={() => handleDeleteInterview(deleteConfirmation.id)}
+                onClick={() => handleDelete(deleteConfirmation.id)}
                 className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg transition-colors flex items-center gap-2"
               >
                 <Trash2 className="h-4 w-4" />
@@ -333,4 +281,4 @@ export default function Dashboard() {
       )}
     </div>
   )
-} 
+}

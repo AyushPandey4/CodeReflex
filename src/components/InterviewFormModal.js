@@ -166,13 +166,22 @@ export default function InterviewFormModal({ isOpen, onClose }) {
         created_at: new Date().toISOString()
       }
 
-      // Save to localStorage with timestamp as key
+      // Save to localStorage with timestamp as key (without user_id)
       const storageKey = `interview_${Date.now()}`
-      localStorage.setItem(storageKey, JSON.stringify({
-        ...interviewData,
-        resume_storage_key: resumeText, // Store reference to resume text
+      const localStorageData = {
+        job_role: data.jobRole,
+        company_name: data.companyName,
+        interview_type: data.interviewType,
+        difficulty_level: data.difficultyLevel,
+        duration: data.duration,
+        job_description: data.jobDescription,
+        interviewer_personality: personaPrompts[data.interviewerPersonality] || data.interviewerPersonality,
+        enable_webcam: data.enableWebcam,
+        custom_focus_areas: data.customFocusAreas ? data.customFocusAreas.split(',').map(area => area.trim()) : [],
+        resume_storage_key: resumeText,
         file_name: resumeFileName
-      }))
+      };
+      localStorage.setItem(storageKey, JSON.stringify(localStorageData));
 
       // Create interview record in Supabase
       const { data: interview, error } = await supabase

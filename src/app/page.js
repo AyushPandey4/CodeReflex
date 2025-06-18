@@ -1,35 +1,38 @@
+// src/app/page.js
 'use client'
 
-import { signInWithGoogle, getCurrentUser, signOut } from '@/lib/supabase'
+// signInWithGoogle is kept as it initiates the OAuth flow.
+// getCurrentUser and signOut are no longer needed here; the cache context handles them.
+import { signInWithGoogle } from '@/lib/supabase' 
 import { motion } from 'framer-motion'
-import { useEffect, useState } from 'react'
+import { useState } from 'react' // useEffect is no longer needed for fetching the user
 import { useRouter } from 'next/navigation'
 import { User, LogOut, ChevronDown, Mic, Camera, Code, FileText, Star, Github, Linkedin, Twitter, Bot } from 'lucide-react'
+import { useCache } from '@/context/CacheContext' // Import the useCache hook
 
 export default function Home() {
-  const [user, setUser] = useState(null)
+  // The 'user' state now comes directly from our global cache.
+  // The 'logout' function also comes from the cache.
+  const { user, logout } = useCache()
+  
   const [showProfileMenu, setShowProfileMenu] = useState(false)
   const router = useRouter()
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      const userData = await getCurrentUser()
-      setUser(userData)
-    }
-    fetchUser()
-  }, [])
+  // The useEffect to fetch the user is removed.
+  // The CacheProvider now handles checking for a logged-in user on app load.
 
   const handleGoogleLogin = async () => {
+    // This function remains the same. It starts the Google login process.
+    // After login, the onAuthStateChange listener in your CacheContext will automatically
+    // detect the new user, update the state, and write it to the cache.
     await signInWithGoogle()
   }
 
   const handleSignOut = async () => {
-    try {
-      await signOut()
-      router.push('/')
-    } catch (error) {
-      console.error('Error signing out:', error)
-    }
+    // We now call the centralized logout function from our cache context.
+    // This will sign the user out from Supabase and clear all cached data.
+    await logout()
+    router.push('/')
   }
 
   return (
