@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import InterviewFormModal from '@/components/InterviewFormModal'
 import { Calendar, Clock, Building, Briefcase, Trash2, AlertCircle, User, LogOut, ChevronDown } from 'lucide-react'
 import { motion } from 'framer-motion'
+import CreditBalance from '@/components/CreditBalance'; 
 
 export default function Dashboard() {
   const { user, interviews, loading, logout, deleteInterview, refreshInterviews } = useCache()
@@ -81,7 +82,7 @@ export default function Dashboard() {
               </motion.div>
               <span className="text-xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">CodeReflex</span>
             </div>
-            
+            <CreditBalance />
             <div className="relative">
               <motion.button
                 whileHover={{ scale: 1.02 }}
@@ -122,7 +123,7 @@ export default function Dashboard() {
           </div>
         </div>
       </nav>
-
+      
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -237,6 +238,7 @@ export default function Dashboard() {
         isOpen={isModalOpen} 
         onClose={handleModalClose} 
       />
+      
 
       {deleteConfirmation && (
         <motion.div

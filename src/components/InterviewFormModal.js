@@ -1,15 +1,17 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { interviewSchema } from '@/lib/validations/interview'
-import { supabase } from '@/lib/supabase'
-import { useRouter } from 'next/navigation'
-import { useTextToSpeech } from '@/hooks/useTextToSpeech'
-import { motion } from 'framer-motion'
-import { Briefcase, FileText, CheckCircle, BrainCircuit } from 'lucide-react'
-import { useToast } from '@/context/ToastContext'
+import { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { interviewSchema } from '@/lib/validations/interview';
+import { supabase } from '@/lib/supabase';
+import { useRouter } from 'next/navigation';
+import { useTextToSpeech } from '@/hooks/useTextToSpeech';
+import { motion } from 'framer-motion';
+import { Briefcase, FileText, CheckCircle, BrainCircuit } from 'lucide-react';
+import { useToast } from '@/context/ToastContext';
+import { useCache } from '@/context/CacheContext';
+import { getUserCredits, deductUserCredits } from '@/lib/credits';
 
 const personaPrompts = {
   "Friendly Dev": "Act as a friendly senior developer, encouraging and helpful.",
@@ -19,21 +21,35 @@ const personaPrompts = {
 };
 
 export default function InterviewFormModal({ isOpen, onClose }) {
-  const [isLoading, setIsLoading] = useState(false)
-  const [resumeText, setResumeText] = useState('')
-  const [resumeFileName, setResumeFileName] = useState('')
-  const [isExtracting, setIsExtracting] = useState(false)
-  const router = useRouter()
+  const { user } = useCache(); // Get user from global context
+  const [credits, setCredits] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+  const [resumeText, setResumeText] = useState('');
+  const [resumeFileName, setResumeFileName] = useState('');
+  const [isExtracting, setIsExtracting] = useState(false);
+  const router = useRouter();
   const { voices } = useTextToSpeech();
   const [selectedVoice, setSelectedVoice] = useState('');
-  const { addToast } = useToast()
+  const { addToast } = useToast();
+
+  // Fetch user's credits when the modal is opened
+  useEffect(() => {
+    const fetchCredits = async () => {
+      if (user) {
+        const userCredits = await getUserCredits(user.id);
+        setCredits(userCredits === null ? 0 : userCredits);
+      }
+    };
+    if (isOpen) {
+      fetchCredits();
+    }
+  }, [user, isOpen]);
 
   useEffect(() => {
     const savedVoice = localStorage.getItem('interviewer_voice_uri');
     if (savedVoice) {
       setSelectedVoice(savedVoice);
     } else if (voices.length > 0) {
-      // Set a default voice if none is saved
       const defaultVoice = voices.find(v => v.lang === 'en-US') || voices[0];
       setSelectedVoice(defaultVoice.voiceURI);
     }
@@ -55,102 +71,87 @@ export default function InterviewFormModal({ isOpen, onClose }) {
     defaultValues: {
       enableWebcam: false,
     },
-  })
+  });
 
   const extractTextFromPDF = async (file) => {
     try {
-      // Validate file type
       if (file.type !== 'application/pdf') {
-        throw new Error('Please upload a PDF file')
+        throw new Error('Please upload a PDF file');
       }
-
-      // Validate file size (max 10MB)
       if (file.size > 10 * 1024 * 1024) {
-        throw new Error('File size should be less than 10MB')
+        throw new Error('File size should be less than 10MB');
       }
-
-      const formData = new FormData()
-      formData.append('file', file)
-
+      const formData = new FormData();
+      formData.append('file', file);
       const response = await fetch('/api/extract-pdf', {
         method: 'POST',
         body: formData,
-      })
-
-      const data = await response.json()
-
+      });
+      const data = await response.json();
       if (!response.ok) {
-        console.error('Server error:', data)
-        throw new Error(data.details || data.error || 'Failed to extract text from PDF')
+        console.error('Server error:', data);
+        throw new Error(data.details || data.error || 'Failed to extract text from PDF');
       }
-
       if (!data.text) {
-        throw new Error('No text could be extracted from the PDF')
+        throw new Error('No text could be extracted from the PDF');
       }
-
-      // Log successful extraction
-      // console.log('PDF processed successfully:', {
-      //   pages: data.info?.pages,
-      //   textLength: data.text.length,
-      //   metadata: data.info?.metadata
-      // })
-
-      return data.text
+      return data.text;
     } catch (error) {
-      console.error('Error extracting text from PDF:', error)
-      throw error
+      console.error('Error extracting text from PDF:', error);
+      throw error;
     }
-  }
+  };
 
   const handleResumeUpload = async (e) => {
-    const file = e.target.files[0]
-    if (!file) return
+    const file = e.target.files[0];
+    if (!file) return;
 
     try {
-      setIsExtracting(true)
-      setResumeFileName(file.name)
-
-      // Extract text from PDF
-      const extractedText = await extractTextFromPDF(file)
-      
+      setIsExtracting(true);
+      setResumeFileName(file.name);
+      const extractedText = await extractTextFromPDF(file);
       if (!extractedText.trim()) {
-        throw new Error('The PDF appears to be empty or unreadable')
+        throw new Error('The PDF appears to be empty or unreadable');
       }
-      
-      // Store in localStorage with a unique key
-      const storageKey = `resume_${Date.now()}`
-      localStorage.setItem(storageKey, extractedText)
-      
-      // Store the storage key for later use
-      setResumeText(storageKey)
-      
-      // Show success message with page count
-      // alert('Resume uploaded and processed successfully!')
-      addToast('Resume uploaded successfully!', 'success')
+      const storageKey = `resume_${Date.now()}`;
+      localStorage.setItem(storageKey, extractedText);
+      setResumeText(storageKey);
+      addToast('Resume uploaded successfully!', 'success');
     } catch (error) {
-      console.error('Error processing resume:', error)
-      // alert(error.message || 'Failed to process resume. Please try again.')
-      addToast('Failed to upload resume. Please try again.', 'error')
-      setResumeText('')
-      setResumeFileName('')
+      console.error('Error processing resume:', error);
+      addToast(error.message || 'Failed to process resume. Please try again.', 'error');
+      setResumeText('');
+      setResumeFileName('');
     } finally {
-      setIsExtracting(false)
+      setIsExtracting(false);
     }
-  }
+  };
 
   const onSubmit = async (data) => {
+    if (!user) {
+      addToast('You must be logged in to start an interview.', 'error');
+      return;
+    }
+
+    setIsLoading(true);
+
     try {
-      setIsLoading(true)
-      
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser()
-      
-      if (!user) throw new Error('No user found')
+      // 1. Check if user has enough credits
+      const currentCredits = await getUserCredits(user.id);
+      if (currentCredits < 1) {
+        addToast("You don't have enough credits for a new interview. You get 3 free credits daily.", 'error');
+        onClose(); // Close the modal
+        return;
+      }
 
-      // Get resume text from localStorage
-      const storedResumeText = resumeText ? localStorage.getItem(resumeText) : ''
+      // 2. Deduct one credit
+      await deductUserCredits(user.id, 1);
+      
+      // Optimistically update the credit count in the UI
+      setCredits(prev => Math.max(0, prev - 1)); 
 
-      // Create interview data object
+      // 3. Proceed with creating the interview
+      const storedResumeText = resumeText ? localStorage.getItem(resumeText) : '';
       const interviewData = {
         user_id: user.id,
         job_role: data.jobRole,
@@ -164,10 +165,9 @@ export default function InterviewFormModal({ isOpen, onClose }) {
         custom_focus_areas: data.customFocusAreas ? data.customFocusAreas.split(',').map(area => area.trim()) : [],
         resume_text: storedResumeText,
         created_at: new Date().toISOString()
-      }
-
-      // Save to localStorage with timestamp as key (without user_id)
-      const storageKey = `interview_${Date.now()}`
+      };
+      
+      const storageKey = `interview_${Date.now()}`;
       const localStorageData = {
         job_role: data.jobRole,
         company_name: data.companyName,
@@ -182,32 +182,34 @@ export default function InterviewFormModal({ isOpen, onClose }) {
         file_name: resumeFileName
       };
       localStorage.setItem(storageKey, JSON.stringify(localStorageData));
-
-      // Create interview record in Supabase
+      
       const { data: interview, error } = await supabase
         .from('interviews')
         .insert([interviewData])
         .select()
-        .single()
+        .single();
 
-      if (error) throw error
+      if (error) {
+        // If creating the interview fails, the credit is already spent,
+        // which prevents rapid re-attempts. The user will get more tomorrow.
+        throw error;
+      }
 
-      // Reset form and close modal
-      reset()
-      onClose()
+      reset();
+      onClose();
+      router.push(`/interview/${interview.id}`);
 
-      // Redirect to interview page
-      router.push(`/interview/${interview.id}`)
     } catch (error) {
-      console.error('Error creating interview:', error)
-      addToast('Failed to create interview. Please try again.', 'error')
+      console.error('Error creating interview:', error);
+      addToast(error.message || 'Failed to create interview. Please try again.', 'error');
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
+  // The JSX for your form remains unchanged.
   return (
     <motion.div
       initial={{ opacity: 0 }}
