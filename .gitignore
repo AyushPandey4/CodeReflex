@@ -43,6 +43,3 @@ next-env.d.ts
 # text files
 Project_Description.txt
 
-#models
-/public/models/**
-!/public/models/.keep
