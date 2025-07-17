@@ -1,4 +1,3 @@
-// src/app/feedback/[id]/page.js
 'use client'
 
 import { useState, useEffect } from 'react';
@@ -14,7 +13,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// Sticky Header Component (unchanged)
+// Sticky Header Component
 const StickyHeader = ({ onBack, onDownload, onCopy }) => (
   <motion.header 
     initial={{ y: -100 }}
@@ -66,7 +65,7 @@ const StickyHeader = ({ onBack, onDownload, onCopy }) => (
   </motion.header>
 );
 
-// Interview Metadata Card (unchanged)
+// Interview Metadata Card
 const InterviewMetadata = ({ data }) => {
   const formatDate = (dateString) => {
     if (!dateString) return "Not available";
@@ -162,7 +161,7 @@ const InterviewMetadata = ({ data }) => {
   );
 };
 
-// AiFeedbackSection with Rating (unchanged)
+// AiFeedbackSection with Rating 
 const AiFeedbackSection = ({ feedback }) => {
   if (!feedback) return null;
 
@@ -246,9 +245,7 @@ const AiFeedbackSection = ({ feedback }) => {
   );
 };
 
-// Other sub-components (EmotionAnalysisSection, TranscriptSection, CodeSnippetSection, NotesSection) are unchanged. I'm omitting them for brevity but they should remain in your file.
-
-// Emotion Analysis Section with Timeline (unchanged)
+// Emotion Analysis Section with Timeline 
 const EmotionAnalysisSection = ({ emotionSummary }) => {
   if (!emotionSummary || emotionSummary.length === 0) return null;
   const emotionCounts = emotionSummary.reduce((acc, log) => {
@@ -274,7 +271,7 @@ const EmotionAnalysisSection = ({ emotionSummary }) => {
   );
 };
 
-// Transcript Section with Chat UI (unchanged)
+// Transcript Section with Chat UI 
 const TranscriptSection = ({ transcript }) => {
   const [isOpen, setIsOpen] = useState(false);
   if (!transcript || transcript.length === 0) return null;
@@ -286,7 +283,7 @@ const TranscriptSection = ({ transcript }) => {
   );
 };
 
-// Code Snippet Section (unchanged)
+// Code Snippet Section 
 const CodeSnippetSection = ({ code }) => {
   if (!code) return null;
   const codeSnippets = typeof code === 'string' ? JSON.parse(code) : code;
@@ -299,7 +296,7 @@ const CodeSnippetSection = ({ code }) => {
   );
 };
 
-// Notes Section Component (unchanged)
+// Notes Section Component 
 const NotesSection = ({ notes, onSave }) => {
   const [noteText, setNoteText] = useState(notes || '');
   const [isSaving, setIsSaving] = useState(false);
@@ -395,7 +392,7 @@ export default function FeedbackPage() {
         />
       </main>
 
-      {/* Custom Scrollbar Styles (unchanged) */}
+      {/* Custom Scrollbar Styles */}
       <style jsx global>{`
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: rgba(31, 41, 55, 0.3); border-radius: 3px; }

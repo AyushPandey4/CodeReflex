@@ -1,4 +1,3 @@
-// src/hooks/useSubmission.js
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";

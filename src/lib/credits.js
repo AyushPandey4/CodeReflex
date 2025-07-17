@@ -1,11 +1,5 @@
-// src/lib/credits.js
 import { supabase } from './supabase';
 
-/**
- * Fetches the current credit balance for a user after ensuring daily credits are refilled.
- * @param {string} userId - The ID of the user.
- * @returns {Promise<number|null>} The user's up-to-date credit balance, or null on error.
- */
 export const getUserCredits = async (userId) => {
   if (!userId) return 0;
   try {
@@ -16,7 +10,6 @@ export const getUserCredits = async (userId) => {
 
     if (error) throw error;
     
-    // The RPC function is designed to return a single value in a table format.
     return data.length > 0 ? data[0].credits_updated : 0;
   } catch (error) {
     console.error('Error fetching user credits:', error.message);
@@ -24,15 +17,9 @@ export const getUserCredits = async (userId) => {
   }
 };
 
-/**
- * Deducts a specified amount of credits from a user's balance.
- * @param {string} userId - The ID of the user.
- * @param {number} amount - The amount of credits to deduct.
- * @returns {Promise<Object|null>} The result of the update operation.
- */
 export const deductUserCredits = async (userId, amount) => {
   try {
-    // It's good practice to get the latest credit count before deducting.
+    
     const currentCredits = await getUserCredits(userId);
 
     if (currentCredits === null || currentCredits < amount) {

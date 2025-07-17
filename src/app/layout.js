@@ -8,7 +8,7 @@ const inter = Inter({ subsets: ["latin"] });
 export const viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#4F46E5", // Indigo color from your theme
+  themeColor: "#4F46E5", 
 };
 
 export const metadata = {

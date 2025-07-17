@@ -1,36 +1,23 @@
-// src/app/page.js
 'use client'
 
-// signInWithGoogle is kept as it initiates the OAuth flow.
-// getCurrentUser and signOut are no longer needed here; the cache context handles them.
 import { signInWithGoogle } from '@/lib/supabase' 
 import { motion } from 'framer-motion'
-import { useState } from 'react' // useEffect is no longer needed for fetching the user
+import { useState } from 'react' 
 import { useRouter } from 'next/navigation'
 import { User, LogOut, ChevronDown, Mic, Camera, Code, FileText, Star, Github, Linkedin, Twitter, Bot } from 'lucide-react'
-import { useCache } from '@/context/CacheContext' // Import the useCache hook
+import { useCache } from '@/context/CacheContext' 
 
 export default function Home() {
-  // The 'user' state now comes directly from our global cache.
-  // The 'logout' function also comes from the cache.
   const { user, logout } = useCache()
   
   const [showProfileMenu, setShowProfileMenu] = useState(false)
   const router = useRouter()
 
-  // The useEffect to fetch the user is removed.
-  // The CacheProvider now handles checking for a logged-in user on app load.
-
   const handleGoogleLogin = async () => {
-    // This function remains the same. It starts the Google login process.
-    // After login, the onAuthStateChange listener in your CacheContext will automatically
-    // detect the new user, update the state, and write it to the cache.
     await signInWithGoogle()
   }
 
   const handleSignOut = async () => {
-    // We now call the centralized logout function from our cache context.
-    // This will sign the user out from Supabase and clear all cached data.
     await logout()
     router.push('/')
   }

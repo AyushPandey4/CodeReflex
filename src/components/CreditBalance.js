@@ -1,4 +1,3 @@
-// src/components/CreditBalance.js
 'use client'
 
 import { useState, useEffect } from 'react';
@@ -19,10 +18,9 @@ export default function CreditBalance() {
       }
     };
 
-    // Fetch credits immediately when the component mounts
     fetchCredits();
 
-    // And then fetch again every 30 seconds to keep it fresh
+    // fetch again every 30 seconds to keep it fresh
     const interval = setInterval(fetchCredits, 30000); 
 
     // Clean up the interval when the component unmounts

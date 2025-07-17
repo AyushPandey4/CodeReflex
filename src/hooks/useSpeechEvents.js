@@ -1,4 +1,3 @@
-// src/hooks/useSpeechEvents.js
 import { useEffect } from "react";
 
 export function useSpeechEvents({

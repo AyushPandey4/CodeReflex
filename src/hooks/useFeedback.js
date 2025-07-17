@@ -1,4 +1,3 @@
-// src/hooks/useFeedback.js
 import { useState, useEffect } from "react";
 
 export function useFeedback(speechError, speechSynthesisError) {
@@ -20,6 +19,5 @@ export function useFeedback(speechError, speechSynthesisError) {
     }
   }, [speechSynthesisError]);
 
-  // We return setLiveFeedback so the parent component can still set non-error feedback messages.
   return { liveFeedback, setLiveFeedback };
 }

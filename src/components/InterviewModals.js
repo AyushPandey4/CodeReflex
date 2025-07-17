@@ -1,4 +1,3 @@
-// src/components/InterviewModals.js
 import { motion, AnimatePresence } from "framer-motion";
 import { BrainCircuit } from "lucide-react";
 

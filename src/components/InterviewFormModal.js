@@ -21,7 +21,7 @@ const personaPrompts = {
 };
 
 export default function InterviewFormModal({ isOpen, onClose }) {
-  const { user } = useCache(); // Get user from global context
+  const { user } = useCache(); 
   const [credits, setCredits] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [resumeText, setResumeText] = useState('');
@@ -136,21 +136,17 @@ export default function InterviewFormModal({ isOpen, onClose }) {
     setIsLoading(true);
 
     try {
-      // 1. Check if user has enough credits
       const currentCredits = await getUserCredits(user.id);
       if (currentCredits < 1) {
         addToast("You don't have enough credits for a new interview. You get 3 free credits daily.", 'error');
-        onClose(); // Close the modal
+        onClose();
         return;
       }
 
-      // 2. Deduct one credit
       await deductUserCredits(user.id, 1);
-      
-      // Optimistically update the credit count in the UI
+    
       setCredits(prev => Math.max(0, prev - 1)); 
 
-      // 3. Proceed with creating the interview
       const storedResumeText = resumeText ? localStorage.getItem(resumeText) : '';
       const interviewData = {
         user_id: user.id,
@@ -160,7 +156,7 @@ export default function InterviewFormModal({ isOpen, onClose }) {
         difficulty_level: data.difficultyLevel,
         duration: data.duration,
         job_description: data.jobDescription,
-        interviewer_personality: personaPrompts[data.interviewerPersonality] || data.interviewerPersonality,
+        interviewer_personality: data.interviewerPersonality,
         enable_webcam: data.enableWebcam,
         custom_focus_areas: data.customFocusAreas ? data.customFocusAreas.split(',').map(area => area.trim()) : [],
         resume_text: storedResumeText,
@@ -175,7 +171,7 @@ export default function InterviewFormModal({ isOpen, onClose }) {
         difficulty_level: data.difficultyLevel,
         duration: data.duration,
         job_description: data.jobDescription,
-        interviewer_personality: personaPrompts[data.interviewerPersonality] || data.interviewerPersonality,
+        interviewer_personality: data.interviewerPersonality,
         enable_webcam: data.enableWebcam,
         custom_focus_areas: data.customFocusAreas ? data.customFocusAreas.split(',').map(area => area.trim()) : [],
         resume_storage_key: resumeText,
@@ -190,8 +186,6 @@ export default function InterviewFormModal({ isOpen, onClose }) {
         .single();
 
       if (error) {
-        // If creating the interview fails, the credit is already spent,
-        // which prevents rapid re-attempts. The user will get more tomorrow.
         throw error;
       }
 
@@ -208,8 +202,7 @@ export default function InterviewFormModal({ isOpen, onClose }) {
   };
 
   if (!isOpen) return null;
-
-  // The JSX for your form remains unchanged.
+  
   return (
     <motion.div
       initial={{ opacity: 0 }}

@@ -1,5 +1,3 @@
-// src/app/interview/[id]/page.js
-
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
