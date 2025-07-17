@@ -355,7 +355,7 @@ export default function Home() {
       <section className="py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <motion.a
-            href="https://github.com/AyushPandey4"
+            href="https://github.com/AyushPandey4/CodeReflix"
             target="_blank"
             rel="noopener noreferrer"
             whileHover={{ scale: 1.02 }}
@@ -393,7 +393,7 @@ export default function Home() {
               <div className="space-y-2">
                 <h4 className="font-semibold">Connect</h4>
                 <div className="flex space-x-4">
-                  <a href="#" className="text-slate-400 hover:text-slate-300">
+                  <a href="https://www.linkedin.com/in/ayush-pandey-13f06/" className="text-slate-400 hover:text-slate-300">
                     <Linkedin className="w-5 h-5" />
                   </a>
                   <a href="#" className="text-slate-400 hover:text-slate-300">

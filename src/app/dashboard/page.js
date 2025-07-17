@@ -193,8 +193,8 @@ export default function Dashboard() {
                         </p>
                       </div>
                       <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                        interview.difficulty_level === 'easy' ? 'bg-emerald-500/20 text-emerald-400' :
-                        interview.difficulty_level === 'medium' ? 'bg-amber-500/20 text-amber-400' :
+                        interview.difficulty_level === 'Easy' ? 'bg-emerald-500/20 text-emerald-400' :
+                        interview.difficulty_level === 'Medium' ? 'bg-amber-500/20 text-amber-400' :
                         'bg-red-500/20 text-red-400'
                       }`}>
                         {interview.difficulty_level}

@@ -33,49 +33,79 @@ The project is a Next.js application with the following structure:
 
 ```
 .
-├── .next/
-├── .git/
+├── .next/                       # Next.js build output (auto-generated)
+├── .git/                        # Git version control
+├── node_modules/                # Node.js dependencies
+├── public/                      # Static assets
+│   ├── favicon.ico              # Favicon for the app
+│   ├── apple-icon.png           # Apple touch icon
+│   ├── icon-512.png             # App icon (512x512)
+│   ├── icon-192.png             # App icon (192x192)
+│   ├── icon.png                 # App icon
+│   ├── manifest.json            # PWA manifest
+│   └── models/                  # (Optional) ML/AI models or assets
 ├── src/
-│   ├── app/
+│   ├── app/                     # Next.js app directory (routing)
 │   │   ├── api/
-│   │   │   ├── chat/
-│   │   │   │   └── route.js        # Handles chat-related API requests
-│   │   │   └── extract-pdf/
-│   │   │       └── route.js        # Extracts text from PDF resumes
-│   │   ├── auth/
-│   │   │   └── callback/
-│   │   │       └── route.js        # Handles OAuth callback
-│   │   ├── dashboard/
-│   │   │   └── page.js             # User dashboard
-│   │   ├── feedback/
-│   │   │   └── [id]/
-│   │   │       └── page.js         # Displays feedback for a specific interview
-│   │   ├── interview/
-│   │   │   └── [id]/
-│   │   │       └── page.js         # The main interview page
-│   │   ├── layout.js               # Main layout
-│   │   └── page.js                 # Home page
-│   ├── components/                 # Reusable components
-│   ├── context/
-│   │   ├── CacheContext.js         # Manages user session, interviews, and feedback caching
-│   │   └── ToastContext.js         # Manages toast notifications
-│   ├── hooks/                      # Custom React hooks
-│   │   ├── useInterview.js         # Fetches and manages a single interview
-│   │   ├── useSpeechToText.js      # Handles speech-to-text functionality
-│   │   ├── useTextToSpeech.js      # Handles text-to-speech functionality
-│   │   ├── useSubmission.js        # Handles interview submission logic
-│   │   └── ...
-│   ├── lib/
-│   │   ├── supabase.js             # Initializes and configures the Supabase client
-│   │   ├── credits.js              # Manages user credits
-│   │   └── ...
-│   └── middleware.js               # Handles security headers and other middleware
-├── public/                         # Static assets
-├── .gitignore
-├── next.config.mjs
-├── package.json
-└── README.md
+│   │   │   ├── chat/route.js        # Handles chat-related API requests (AI interviewer)
+│   │   │   └── extract-pdf/route.js # Extracts text from PDF resumes
+│   │   ├── auth/callback/route.js   # Handles OAuth callback for Google login
+│   │   ├── dashboard/page.js        # User dashboard (lists interviews, credits, etc.)
+│   │   ├── feedback/[id]/page.js    # Displays feedback for a specific interview
+│   │   ├── interview/[id]/page.js   # The main interview page (AI interaction, coding, etc.)
+│   │   ├── layout.js                # Main layout for the app
+│   │   ├── page.js                  # Home page (landing/login)
+│   │   ├── favicon.ico              # App favicon
+│   │   └── globals.css              # Global styles
+│   ├── components/                  # Reusable UI components
+│   │   ├── InterviewFormModal.js    # Modal for starting a new interview (form, resume upload)
+│   │   ├── InterviewModals.js       # Additional modals for interview flow
+│   │   ├── CreditBalance.js         # Displays user's credit balance
+│   │   ├── PermissionsPrompt.js     # Prompts for camera/mic permissions
+│   │   ├── CodeEditor.js            # Embedded code editor for coding rounds
+│   │   ├── InterviewerChatArea.js   # Chat area for AI interviewer messages
+│   │   ├── UserTranscriptArea.js    # Displays user's spoken/written responses
+│   │   ├── FacialFeedback.js        # Shows real-time emotion/face analysis
+│   │   ├── Toast.js                 # Toast notification component
+│   │   └── Timer.js                 # Timer for interview rounds
+│   ├── context/                     # React context providers
+│   │   ├── CacheContext.js          # Manages user session, interviews, and feedback caching
+│   │   └── ToastContext.js          # Manages toast notifications
+│   ├── hooks/                       # Custom React hooks
+│   │   ├── useInterview.js          # Fetches and manages a single interview
+│   │   ├── useInterviewFlow.js      # Manages the flow/state of an interview session
+│   │   ├── useSubmission.js         # Handles interview submission logic
+│   │   ├── useSpeechEvents.js       # Centralizes logic for speech interaction
+│   │   ├── useSpeechToText.js       # Handles speech-to-text functionality
+│   │   ├── useTextToSpeech.js       # Handles text-to-speech functionality
+│   │   └── useFeedback.js           # Manages feedback state for interviews
+│   ├── lib/                         # Utility libraries and API clients
+│   │   ├── supabase.js              # Initializes and configures the Supabase client
+│   │   ├── credits.js               # Manages user credits and daily refill logic
+│   │   └── validations/
+│   │       └── interview.js         # Zod schema for interview form validation
+│   └── middleware.js                # Adds security headers and policies (CSP, HSTS, etc.)
+├── .gitignore                      # Git ignore rules
+├── jsconfig.json                   # JS/TS path aliases
+├── next.config.mjs                 # Next.js configuration
+├── package.json                    # Project metadata and dependencies
+├── package-lock.json               # Dependency lockfile
+├── postcss.config.mjs              # PostCSS configuration
+└── README.md                       # Project documentation (this file)
 ```
+
+### File/Folder Descriptions
+
+- **public/**: Contains static files and icons used by the app and for PWA support.
+- **src/app/**: Main entry point for all routes and API endpoints. Each folder/file under `app/` corresponds to a route.
+- **src/components/**: All reusable UI components, including modals, editors, chat areas, feedback, and notifications.
+- **src/context/**: React context providers for global state (user/interview cache, toasts).
+- **src/hooks/**: Custom hooks for interview logic, speech, feedback, and submission.
+- **src/lib/**: Utility libraries for Supabase, credits, and validation schemas.
+- **src/middleware.js**: Adds security headers and policies to all requests.
+- **.gitignore, jsconfig.json, next.config.mjs, package.json, postcss.config.mjs**: Project configuration files.
+
+Every file and folder is now described for clarity. If you add new files, follow this format to keep documentation up to date.
 
 ## Routes
 
