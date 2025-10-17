@@ -2,29 +2,29 @@
 
 CodeReflex is a cutting-edge AI-powered mock interview simulator designed to help you ace your technical interviews. It provides a realistic interview experience with real-time feedback, coding challenges, and personalized performance analysis.
 
-## Demo
+## 🚀 Demo
 
-### Dashboard Page
+### 🖥️ Dashboard Page
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/AyushPandey4/CodeReflex/main/assets/Dashboard.png" alt="Home Page" width="800">
+  <img src="https://raw.githubusercontent.com/AyushPandey4/CodeReflex/main/assets/Dashboard.png" alt="Dashboard Page" width="800">
 </p>
+
+---
 
 ### 🏠 Interview Page
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/AyushPandey4/CodeReflex/main/assets/Interview1.png" alt="Interview Page 1" width="800">
-</p>
-
-<p align="center">
+  <img src="https://raw.githubusercontent.com/AyushPandey4/CodeReflex/main/assets/Interview2.png" alt="Interview Page 2" width="800">
   <img src="https://raw.githubusercontent.com/AyushPandey4/CodeReflex/main/assets/Interview2.png" alt="Interview Page 2" width="800">
 </p>
 
+---
 
-### 📜 Feedback Page
+### 💬 Feedback Page
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/AyushPandey4/CodeReflex/main/assets/Feedback.png" alt="Logs Page" width="800">
+  <img src="https://raw.githubusercontent.com/AyushPandey4/CodeReflex/main/assets/Feedback.png" alt="Feedback Page" width="800">
 </p>
 
 ---
